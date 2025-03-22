@@ -15,49 +15,106 @@ float sdBox(in vec2 p, in vec2 xy, in vec2 b)
 }
 
 // //Author: https://iquilezles.org/articles/distfunctions2d/
-// float sdParallelogram(in vec2 p, float wi, float he, float sk)
-// {
-//     vec2 e = vec2(sk, he);
-//     p = (p.y < 0.0) ? -p : p;
-//     vec2 w = p - e;
-//     w.x -= clamp(w.x, -wi, wi);
-//     vec2 d = vec2(dot(w, w), -w.y);
-//     float s = p.x * e.y - p.y * e.x;
-//     p = (s < 0.0) ? -p : p;
-//     vec2 v = p - vec2(wi, 0);
-//     v -= e * clamp(dot(v, e) / dot(e, e), -1.0, 1.0);
-//     d = min(d, vec2(dot(v, v), wi * he - abs(s)));
-//     return sqrt(d.x) * sign(-d.y);
-// }
-float sdfParallelogram(vec2 p, vec2 origin, vec2 a, vec2 b) {
-    // Calculate the determinant of the basis vectors matrix
-    float det = a.x * b.y - a.y * b.x;
+float sdTrail(in vec2 p, in vec2 v0, in vec2 v1, in vec2 v2, in vec2 v3)
+{
+    float d = dot(p - v0, p - v0);
+    float s = 1.0;
 
-    // Translate the point so that the parallelogram's origin is at (0, 0)
-    vec2 p_prime = p - origin;
+    // Edge from v3 to v0
+    {
+        vec2 e = v3 - v0;
+        vec2 w = p - v0;
+        vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+        d = min(d, dot(b, b));
 
-    // Transform the point to the unit square's coordinate system
-    float u = (p_prime.x * b.y - p_prime.y * b.x) / det;
-    float v = (-p_prime.x * a.y + p_prime.y * a.x) / det;
+        // Compute branchless boolean conditions:
+        float c0 = step(0.0, p.y - v0.y); // 1 if (p.y >= v0.y)
+        float c1 = 1.0 - step(0.0, p.y - v3.y); // 1 if (p.y <  v3.y)
+        float c2 = 1.0 - step(0.0, e.x * w.y - e.y * w.x); // 1 if (e.x*w.y > e.y*w.x)
+        float allCond = c0 * c1 * c2;
+        float noneCond = (1.0 - c0) * (1.0 - c1) * (1.0 - c2);
+        // If either allCond or noneCond is 1, then flip factor becomes -1.
+        float flip = mix(1.0, -1.0, step(0.5, allCond + noneCond));
+        s *= flip;
+    }
 
-    // Calculate the signed distance to the unit square [0, 1] x [0, 1]
-    vec2 d = abs(vec2(u, v) - 0.5) - 0.5;
-    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+    // Edge from v0 to v1
+    {
+        vec2 e = v0 - v1;
+        vec2 w = p - v1;
+        vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+        d = min(d, dot(b, b));
+
+        float c0 = step(0.0, p.y - v1.y);
+        float c1 = 1.0 - step(0.0, p.y - v0.y);
+        float c2 = 1.0 - step(0.0, e.x * w.y - e.y * w.x);
+        float allCond = c0 * c1 * c2;
+        float noneCond = (1.0 - c0) * (1.0 - c1) * (1.0 - c2);
+        float flip = mix(1.0, -1.0, step(0.5, allCond + noneCond));
+        s *= flip;
+    }
+
+    // Edge from v1 to v2
+    {
+        vec2 e = v1 - v2;
+        vec2 w = p - v2;
+        vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+        d = min(d, dot(b, b));
+
+        float c0 = step(0.0, p.y - v2.y);
+        float c1 = 1.0 - step(0.0, p.y - v1.y);
+        float c2 = 1.0 - step(0.0, e.x * w.y - e.y * w.x);
+        float allCond = c0 * c1 * c2;
+        float noneCond = (1.0 - c0) * (1.0 - c1) * (1.0 - c2);
+        float flip = mix(1.0, -1.0, step(0.5, allCond + noneCond));
+        s *= flip;
+    }
+
+    // Edge from v2 to v3
+    {
+        vec2 e = v2 - v3;
+        vec2 w = p - v3;
+        vec2 b = w - e * clamp(dot(w, e) / dot(e, e), 0.0, 1.0);
+        d = min(d, dot(b, b));
+
+        float c0 = step(0.0, p.y - v3.y);
+        float c1 = 1.0 - step(0.0, p.y - v2.y);
+        float c2 = 1.0 - step(0.0, e.x * w.y - e.y * w.x);
+        float allCond = c0 * c1 * c2;
+        float noneCond = (1.0 - c0) * (1.0 - c1) * (1.0 - c2);
+        float flip = mix(1.0, -1.0, step(0.5, allCond + noneCond));
+        s *= flip;
+    }
+
+    return s * sqrt(d);
 }
 
 vec2 normalize(vec2 value, float isPosition, vec3 iResolution) {
     return (value * 2.0 - (iResolution.xy * isPosition)) / iResolution.y;
 }
 
-float sdParallelogram(vec2 p, vec2 a, vec2 b) {
-    vec2 pa = p - a;
-    vec2 ba = b - a;
-    vec2 h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0) * ba - pa;
+float easeOutBounce(float x) {
+    const float n1 = 7.5625;
+    const float d1 = 2.75;
 
-    vec2 perp = vec2(-ba.y, ba.x); // Perpendicular to b
-    vec2 h2 = clamp(dot(pa, perp) / dot(perp, perp), -1.0, 1.0) * perp - pa;
+    float t1 = step(1.0 / d1, x);
+    float t2 = step(2.0 / d1, x);
+    float t3 = step(2.5 / d1, x);
 
-    return min(length(h), length(h2));
+    float b = n1 * x * x;
+    b = mix(b, n1 * (x - 1.5 / d1) * (x - 1.5 / d1) + 0.75, t1);
+    b = mix(b, n1 * (x - 2.25 / d1) * (x - 2.25 / d1) + 0.9375, t2);
+    b = mix(b, n1 * (x - 2.625 / d1) * (x - 2.625 / d1) + 0.984375, t3);
+
+    return b;
+}
+
+float easeInOutBounce(float x) {
+    return mix(
+        (1.0 - easeOutBounce(1.0 - 2.0 * x)) / 2.0,
+        (1.0 + easeOutBounce(2.0 * x - 1.0)) / 2.0,
+        step(0.5, x)
+    );
 }
 
 float antialising(float distance, vec3 iResolution) {
@@ -76,16 +133,20 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1., iResolution), normalize(iCursorCurrent.zw, 0., iResolution));
     vec4 previousCursor = vec4(normalize(iCursorPrevious.xy, 1., iResolution), normalize(iCursorPrevious.zw, 0., iResolution));
 
+    vec2 v0 = vec2(currentCursor.x, currentCursor.y - currentCursor.w);
+    vec2 v1 = vec2(currentCursor.x + currentCursor.z, currentCursor.y);
+    vec2 v2 = vec2(previousCursor.x + currentCursor.z, previousCursor.y);
+    vec2 v3 = vec2(previousCursor.x, previousCursor.y - previousCursor.w);
+
+    float d2 = sdTrail(vu, v0, v1, v2, v3);
+    fragColor = mix(fragColor, vec4(0., 0., 1., 1.), antialising(d2, iResolution));
+
     vec2 offsetFactor = vec2(-.5, 0.5);
     float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
-    fragColor = mix(fragColor, vec4(1., 0., 1., 1.), step(cCursorDistance, .0));
+    fragColor = mix(fragColor, vec4(1., 0., 1., 1.), antialising(cCursorDistance, iResolution));
 
     float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
-    fragColor = mix(fragColor, vec4(.87, .87, .87, 1.), step(pCursorDistance, .0));
-
-    float d = sdfParallelogram(vu, currentCursor.xy, vec2(0.1, 0), vec2(0., .5));
-
-    fragColor = mix(fragColor, vec4(1., 1., 1., 1.), step(d, .0));
+    fragColor = mix(fragColor, vec4(.87, .87, .87, 1.), antialising(pCursorDistance, iResolution));
 }
 void main() {
     mainImage(gl_FragColor, gl_FragCoord.xy);
