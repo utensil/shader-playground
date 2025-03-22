@@ -150,15 +150,24 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec2 v2 = vec2(previousCursor.x + currentCursor.z * invertedVertexFactor, previousCursor.y);
     vec2 v3 = vec2(previousCursor.x + currentCursor.z * vertexFactor, previousCursor.y - previousCursor.w);
 
+    vec4 newColor = vec4(fragColor);
+
+    float lineLength = distance(currentCursor.xy, previousCursor.xy);
+    float distanceToEnd = distance(vu.xy, currentCursor.xy);
+    float alphaModifier = distanceToEnd / lineLength;
+
     float d2 = sdTrail(vu, v0, v1, v2, v3);
-    fragColor = mix(fragColor, vec4(0., 0., 1., 1.), antialising(d2, iResolution));
+    newColor = mix(newColor, vec4(1., 1., 1., 1.), antialising(d2, iResolution));
+    // newColor = mix(newColor, vec4(0., 0., 1., 1.), 1.0 - smoothstep(d2, -0.1, 0.005));
 
     vec2 offsetFactor = vec2(-.5, 0.5);
     float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
-    fragColor = mix(fragColor, vec4(1., 0., 1., 1.), antialising(cCursorDistance, iResolution));
+    newColor = mix(newColor, vec4(1., 0., 1., 1.), antialising(cCursorDistance, iResolution));
 
     float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
-    fragColor = mix(fragColor, vec4(.87, .87, .87, 1.), antialising(pCursorDistance, iResolution));
+    newColor = mix(newColor, vec4(.87, .87, .87, 1.), antialising(pCursorDistance, iResolution));
+
+    fragColor = mix(fragColor, newColor, 1.0 - alphaModifier);
 }
 void main() {
     mainImage(gl_FragColor, gl_FragCoord.xy);
