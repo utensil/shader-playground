@@ -53,20 +53,25 @@ function moveCursor(x, y) {
   setCursorUniforms();
 }
 
-canvas.addEventListener("click", function () {
-  change(1);
+canvas.addEventListener("click", function (event) {
+  const rect = canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  console.log(x, y);
+  moveCursor(x, y);
+  // changePresetPosition(1);
 });
 canvas.addEventListener("contextmenu", function (event) {
   event.preventDefault(); // Prevent the default context menu from appearing
-  change(-1);
+  changePresetPosition(-1);
 });
 
 function gameLoop() {
-  change(1);
+  // changePresetPosition(1);
   // setInterval(updateCursor, 3000); // Change every 10 seconds
 }
 
-function change(value) {
+function changePresetPosition(value) {
   let top = canvas.height * 0.1;
   let bottom = canvas.height * 0.9;
   let left = canvas.width * 0.1;
