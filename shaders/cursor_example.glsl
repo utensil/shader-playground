@@ -121,6 +121,15 @@ float antialising(float distance, vec3 iResolution) {
     return 1. - smoothstep(0., normalize(vec2(2., 2.), 0., iResolution).x, distance);
 }
 
+float determineStartVertexFactor(vec2 a, vec2 b) {
+    // Conditions using step
+    float condition1 = step(b.x, a.x) * step(a.y, b.y); // a.x < b.x && a.y > b.y
+    float condition2 = step(a.x, b.x) * step(b.y, a.y); // a.x > b.x && a.y < b.y
+
+    // If neither condition is met, return 1 (else case)
+    return 1.0 - max(condition1, condition2);
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     vec3 iResolution = vec3(u_resolution, 0.);
@@ -133,10 +142,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1., iResolution), normalize(iCursorCurrent.zw, 0., iResolution));
     vec4 previousCursor = vec4(normalize(iCursorPrevious.xy, 1., iResolution), normalize(iCursorPrevious.zw, 0., iResolution));
 
-    vec2 v0 = vec2(currentCursor.x, currentCursor.y - currentCursor.w);
-    vec2 v1 = vec2(currentCursor.x + currentCursor.z, currentCursor.y);
-    vec2 v2 = vec2(previousCursor.x + currentCursor.z, previousCursor.y);
-    vec2 v3 = vec2(previousCursor.x, previousCursor.y - previousCursor.w);
+    float vertexFactor = determineStartVertexFactor(currentCursor.xy, previousCursor.xy);
+    float invertedVertexFactor = 1.0 - vertexFactor;
+
+    vec2 v0 = vec2(currentCursor.x + currentCursor.z * vertexFactor, currentCursor.y - currentCursor.w);
+    vec2 v1 = vec2(currentCursor.x + currentCursor.z * invertedVertexFactor, currentCursor.y);
+    vec2 v2 = vec2(previousCursor.x + currentCursor.z * invertedVertexFactor, previousCursor.y);
+    vec2 v3 = vec2(previousCursor.x + currentCursor.z * vertexFactor, previousCursor.y - previousCursor.w);
 
     float d2 = sdTrail(vu, v0, v1, v2, v3);
     fragColor = mix(fragColor, vec4(0., 0., 1., 1.), antialising(d2, iResolution));
