@@ -130,6 +130,10 @@ float determineStartVertexFactor(vec2 a, vec2 b) {
     return 1.0 - max(condition1, condition2);
 }
 
+const vec4 COLOR = vec4(0.0, 0.694, 1.0, 1.0);
+const vec4 COLOR2 = vec4(.0, .227, 0.502, 1.0);
+const float DURATION = 0.2;
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     vec3 iResolution = vec3(u_resolution, 0.);
@@ -137,6 +141,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     //Normalization
     vec2 vu = normalize(fragCoord, 1., iResolution);
+    vec2 offsetFactor = vec2(-.5, 0.5);
 
     //xy will have the normalized position of the center of the cursor, and zw, the width and height normalized too
     vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1., iResolution), normalize(iCursorCurrent.zw, 0., iResolution));
@@ -152,20 +157,21 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     vec4 newColor = vec4(fragColor);
 
+    float progress = clamp((iTime - (iTimeCursorChange - 0.1)) / DURATION, 0.0, 1.0);
     float lineLength = distance(currentCursor.xy, previousCursor.xy);
-    float distanceToEnd = distance(vu.xy, currentCursor.xy);
-    float alphaModifier = distanceToEnd / lineLength;
+    float distanceToEnd = distance(vu.xy, vec2(currentCursor.x + (currentCursor.z / 2.), currentCursor.y - (currentCursor.w / 2.)));
+    float alphaModifier = distanceToEnd / (lineLength * (1.0 - progress));
 
     float d2 = sdTrail(vu, v0, v1, v2, v3);
     newColor = mix(newColor, vec4(1., 1., 1., 1.), antialising(d2, iResolution));
-    // newColor = mix(newColor, vec4(0., 0., 1., 1.), 1.0 - smoothstep(d2, -0.1, 0.005));
+    newColor = mix(newColor, COLOR2, 1.0 - smoothstep(d2, -0.1, 0.005));
+    newColor = mix(newColor, COLOR, 1.0 - smoothstep(d2, -0.03, 0.005));
 
-    vec2 offsetFactor = vec2(-.5, 0.5);
-    float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
-    newColor = mix(newColor, vec4(1., 0., 1., 1.), antialising(cCursorDistance, iResolution));
-
-    float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
-    newColor = mix(newColor, vec4(.87, .87, .87, 1.), antialising(pCursorDistance, iResolution));
+    // float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
+    // newColor = mix(newColor, vec4(1., 0., 1., 1.), antialising(cCursorDistance, iResolution));
+    //
+    // float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
+    // newColor = mix(newColor, vec4(.87, .87, .87, 1.), antialising(pCursorDistance, iResolution));
 
     fragColor = mix(fragColor, newColor, 1.0 - alphaModifier);
 }
