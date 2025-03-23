@@ -1,15 +1,3 @@
-#ifdef GL_ES
-precision mediump float;
-#endif
-//Compatible with shadertoy
-#define iTime u_time
-#define iResolution u_resolution
-
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec4 iCursorCurrent;
-uniform vec4 iCursorPrevious;
-uniform float iTimeCursorChange;
 
 float sdBox(in vec2 p, in vec2 xy, in vec2 b)
 {
@@ -183,8 +171,4 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     newColor = mix(newColor, PREVIOUS_CURSOR_COLOR, antialising(pCursorDistance));
 
     fragColor = mix(fragColor, newColor, 1.0 - alphaModifier);
-}
-
-void main() {
-    mainImage(gl_FragColor, gl_FragCoord.xy);
 }

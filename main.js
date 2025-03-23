@@ -6,14 +6,14 @@ let previousCursor = { x: 0, y: 0, z: 10, w: 20 };
 let currentCursor = { x: 0, y: 0, z: 10, w: 20 };
 let option = 0;
 
-fetch("/shaders/cursor_example.glsl")
-  .then((response) => {
-    return response.text();
-  })
-  .then((fragment) => {
-    sandbox.load(fragment);
-    gameLoop();
-  });
+Promise.all([
+  fetch("/shaders/cursor_example.glsl").then((response) => response.text()),
+  fetch("/shaders/ghostty_wrapper.glsl").then((response) => response.text()),
+]).then(([cursorFragment, ghosttyWrapper]) => {
+  const modifiedShader = ghosttyWrapper.replace("//$REPLACE$", cursorFragment);
+  sandbox.load(modifiedShader);
+  gameLoop();
+});
 
 function setCursorUniforms() {
   sandbox.setUniform(
