@@ -141,18 +141,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float lineLength = distance(currentCursor.xy, previousCursor.xy);
     float distanceToEnd = distance(vu.xy, vec2(currentCursor.x + (currentCursor.z / 2.), currentCursor.y - (currentCursor.w / 2.)));
     float alphaModifier = distanceToEnd / (lineLength * (1.0 - progress));
-    // alphaModifier = ParametricBlend(alphaModifier);
 
     float d2 = sdTrail(vu, v0, v1, v2, v3);
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(d2, -0.01, 0.001));
     newColor = mix(newColor, TRAIL_COLOR, 1.0 - smoothstep(d2, -0.01, 0.001));
     newColor = mix(newColor, TRAIL_COLOR, antialising(d2));
+    newColor = mix(fragColor, newColor, 1.0 - alphaModifier);
     float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
-    newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(cCursorDistance, -0.01, 0.0000));
-    newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(cCursorDistance, -0.01, 0.0000));
-
+    newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(cCursorDistance, -0.000, 0.003 * (1. - progress)));
+    newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(cCursorDistance, -0.000, 0.003 * (1. - progress)));
+    fragColor = mix(newColor, fragColor, step(cCursorDistance, 0.));
     // float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
     // newColor = mix(newColor, PREVIOUS_CURSOR_COLOR, antialising(pCursorDistance));
-
-    fragColor = mix(fragColor, newColor, 1.0 - alphaModifier);
 }
