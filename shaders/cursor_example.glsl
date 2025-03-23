@@ -1,6 +1,9 @@
 #ifdef GL_ES
 precision mediump float;
 #endif
+//Compatible with shadertoy
+#define iTime u_time
+#define iResolution u_resolution
 
 uniform float u_time;
 uniform vec2 u_resolution;
@@ -89,7 +92,7 @@ float sdTrail(in vec2 p, in vec2 v0, in vec2 v1, in vec2 v2, in vec2 v3)
     return s * sqrt(d);
 }
 
-vec2 normalize(vec2 value, float isPosition, vec3 iResolution) {
+vec2 normalize(vec2 value, float isPosition) {
     return (value * 2.0 - (iResolution.xy * isPosition)) / iResolution.y;
 }
 
@@ -117,8 +120,8 @@ float easeInOutBounce(float x) {
     );
 }
 
-float antialising(float distance, vec3 iResolution) {
-    return 1. - smoothstep(0., normalize(vec2(2., 2.), 0., iResolution).x, distance);
+float antialising(float distance) {
+    return 1. - smoothstep(0., normalize(vec2(2., 2.), 0.).x, distance);
 }
 
 float determineStartVertexFactor(vec2 a, vec2 b) {
@@ -130,26 +133,30 @@ float determineStartVertexFactor(vec2 a, vec2 b) {
     return 1.0 - max(condition1, condition2);
 }
 
+const vec4 TRAIL_COLOR = vec4(1.0, 0.725, 0.161, 1.0);
 const vec4 COLOR = vec4(0.0, 0.694, 1.0, 1.0);
 const vec4 COLOR2 = vec4(.0, .227, 0.502, 1.0);
+const vec4 CURRENT_CURSOR_COLOR = TRAIL_COLOR;
+const vec4 PREVIOUS_CURSOR_COLOR = TRAIL_COLOR;
 const float DURATION = 0.2;
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
-    vec3 iResolution = vec3(u_resolution, 0.);
-    float iTime = u_time;
-
-    //Normalization
-    vec2 vu = normalize(fragCoord, 1., iResolution);
+    //Normalization for fragCoord to a space of -1 to 1;
+    vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
 
-    //xy will have the normalized position of the center of the cursor, and zw, the width and height normalized too
-    vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1., iResolution), normalize(iCursorCurrent.zw, 0., iResolution));
-    vec4 previousCursor = vec4(normalize(iCursorPrevious.xy, 1., iResolution), normalize(iCursorPrevious.zw, 0., iResolution));
+    //Normalization for cursor position and size;
+    //cursor xy has the postion in a space of -1 to 1;
+    //zw has the width and height
+    vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1.), normalize(iCursorCurrent.zw, 0.));
+    vec4 previousCursor = vec4(normalize(iCursorPrevious.xy, 1.), normalize(iCursorPrevious.zw, 0.));
 
+    //When drawing a parellelogram between cursors for the trail i need to determine where to start at the top-left or top-right vertex of the cursor
     float vertexFactor = determineStartVertexFactor(currentCursor.xy, previousCursor.xy);
     float invertedVertexFactor = 1.0 - vertexFactor;
 
+    //Set every vertex of my parellogram
     vec2 v0 = vec2(currentCursor.x + currentCursor.z * vertexFactor, currentCursor.y - currentCursor.w);
     vec2 v1 = vec2(currentCursor.x + currentCursor.z * invertedVertexFactor, currentCursor.y);
     vec2 v2 = vec2(previousCursor.x + currentCursor.z * invertedVertexFactor, previousCursor.y);
@@ -157,24 +164,27 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     vec4 newColor = vec4(fragColor);
 
-    float progress = clamp((iTime - (iTimeCursorChange - 0.1)) / DURATION, 0.0, 1.0);
+    float progress = clamp((iTime - iTimeCursorChange) / DURATION, 0.0, 1.0);
+
+    //Distance between cursors determine the total length of the parallelogram;
     float lineLength = distance(currentCursor.xy, previousCursor.xy);
     float distanceToEnd = distance(vu.xy, vec2(currentCursor.x + (currentCursor.z / 2.), currentCursor.y - (currentCursor.w / 2.)));
     float alphaModifier = distanceToEnd / (lineLength * (1.0 - progress));
 
     float d2 = sdTrail(vu, v0, v1, v2, v3);
-    newColor = mix(newColor, vec4(1., 1., 1., 1.), antialising(d2, iResolution));
-    newColor = mix(newColor, COLOR2, 1.0 - smoothstep(d2, -0.1, 0.005));
-    newColor = mix(newColor, COLOR, 1.0 - smoothstep(d2, -0.03, 0.005));
+    newColor = mix(newColor, TRAIL_COLOR, antialising(d2));
+    // newColor = mix(newColor, COLOR2, 1.0 - smoothstep(d2, -0.1, 0.005));
+    // newColor = mix(newColor, COLOR, 1.0 - smoothstep(d2, -0.03, 0.005));
 
-    // float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
-    // newColor = mix(newColor, vec4(1., 0., 1., 1.), antialising(cCursorDistance, iResolution));
-    //
-    // float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
-    // newColor = mix(newColor, vec4(.87, .87, .87, 1.), antialising(pCursorDistance, iResolution));
+    float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
+    newColor = mix(newColor, CURRENT_CURSOR_COLOR, antialising(cCursorDistance));
+
+    float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
+    newColor = mix(newColor, PREVIOUS_CURSOR_COLOR, antialising(pCursorDistance));
 
     fragColor = mix(fragColor, newColor, 1.0 - alphaModifier);
 }
+
 void main() {
     mainImage(gl_FragColor, gl_FragCoord.xy);
 }
