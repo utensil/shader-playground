@@ -30,7 +30,8 @@ function setCursorUniforms() {
     previousCursor.z,
     previousCursor.w,
   );
-  sandbox.setUniform("iTimeCursorChange", performance.now() / 1000);
+  let now = sandbox.uniforms["u_time"].value[0];
+  sandbox.setUniform("iTimeCursorChange", now);
 }
 function updateCursor() {
   previousCursor = { ...currentCursor };
