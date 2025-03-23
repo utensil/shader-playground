@@ -84,28 +84,10 @@ vec2 normalize(vec2 value, float isPosition) {
     return (value * 2.0 - (iResolution.xy * isPosition)) / iResolution.y;
 }
 
-float easeOutBounce(float x) {
-    const float n1 = 7.5625;
-    const float d1 = 2.75;
-
-    float t1 = step(1.0 / d1, x);
-    float t2 = step(2.0 / d1, x);
-    float t3 = step(2.5 / d1, x);
-
-    float b = n1 * x * x;
-    b = mix(b, n1 * (x - 1.5 / d1) * (x - 1.5 / d1) + 0.75, t1);
-    b = mix(b, n1 * (x - 2.25 / d1) * (x - 2.25 / d1) + 0.9375, t2);
-    b = mix(b, n1 * (x - 2.625 / d1) * (x - 2.625 / d1) + 0.984375, t3);
-
-    return b;
-}
-
-float easeInOutBounce(float x) {
-    return mix(
-        (1.0 - easeOutBounce(1.0 - 2.0 * x)) / 2.0,
-        (1.0 + easeOutBounce(2.0 * x - 1.0)) / 2.0,
-        step(0.5, x)
-    );
+float ParametricBlend(float t)
+{
+    float sqr = t * t;
+    return sqr / (2.0 * (sqr - t) + 1.0);
 }
 
 float antialising(float distance) {
@@ -122,11 +104,12 @@ float determineStartVertexFactor(vec2 a, vec2 b) {
 }
 
 const vec4 TRAIL_COLOR = vec4(1.0, 0.725, 0.161, 1.0);
-const vec4 COLOR = vec4(0.0, 0.694, 1.0, 1.0);
-const vec4 COLOR2 = vec4(.0, .227, 0.502, 1.0);
+const vec4 TRAIL_COLOR_ACCENT = vec4(1.0, 0., 0., 1.0);
+// const vec4 TRAIL_COLOR = vec4(0.482, 0.886, 1.0, 1.0);
+// const vec4 TRAIL_COLOR_ACCENT = vec4(0.0, 0.424, 1.0, 1.0);
 const vec4 CURRENT_CURSOR_COLOR = TRAIL_COLOR;
 const vec4 PREVIOUS_CURSOR_COLOR = TRAIL_COLOR;
-const float DURATION = 0.2;
+const float DURATION = 0.3;
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
@@ -152,23 +135,24 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
     vec4 newColor = vec4(fragColor);
 
-    float progress = clamp((iTime - iTimeCursorChange) / DURATION, 0.0, 1.0);
+    float progress = ParametricBlend(clamp((iTime - iTimeCursorChange) / DURATION, 0.0, 1.0));
 
     //Distance between cursors determine the total length of the parallelogram;
     float lineLength = distance(currentCursor.xy, previousCursor.xy);
     float distanceToEnd = distance(vu.xy, vec2(currentCursor.x + (currentCursor.z / 2.), currentCursor.y - (currentCursor.w / 2.)));
     float alphaModifier = distanceToEnd / (lineLength * (1.0 - progress));
+    // alphaModifier = ParametricBlend(alphaModifier);
 
     float d2 = sdTrail(vu, v0, v1, v2, v3);
+    newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(d2, -0.01, 0.001));
+    newColor = mix(newColor, TRAIL_COLOR, 1.0 - smoothstep(d2, -0.01, 0.001));
     newColor = mix(newColor, TRAIL_COLOR, antialising(d2));
-    // newColor = mix(newColor, COLOR2, 1.0 - smoothstep(d2, -0.1, 0.005));
-    // newColor = mix(newColor, COLOR, 1.0 - smoothstep(d2, -0.03, 0.005));
-
     float cCursorDistance = sdBox(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
-    newColor = mix(newColor, CURRENT_CURSOR_COLOR, antialising(cCursorDistance));
+    newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(cCursorDistance, -0.01, 0.0000));
+    newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(cCursorDistance, -0.01, 0.0000));
 
-    float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
-    newColor = mix(newColor, PREVIOUS_CURSOR_COLOR, antialising(pCursorDistance));
+    // float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
+    // newColor = mix(newColor, PREVIOUS_CURSOR_COLOR, antialising(pCursorDistance));
 
     fragColor = mix(fragColor, newColor, 1.0 - alphaModifier);
 }
