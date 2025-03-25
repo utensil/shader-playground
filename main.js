@@ -17,14 +17,14 @@ Promise.all([
 
 function setCursorUniforms() {
   sandbox.setUniform(
-    "iCursorCurrent",
+    "iCurrentCursor",
     currentCursor.x,
     currentCursor.y,
     currentCursor.z,
     currentCursor.w,
   );
   sandbox.setUniform(
-    "iCursorPrevious",
+    "iPreviousCursor",
     previousCursor.x,
     previousCursor.y,
     previousCursor.z,
@@ -68,7 +68,7 @@ canvas.addEventListener("contextmenu", function (event) {
 });
 
 function gameLoop() {
-  // changePresetPosition(1);
+  changePresetPosition(1);
   // setInterval(updateCursor, 3000); // Change every 10 seconds
 }
 

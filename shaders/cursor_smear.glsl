@@ -147,8 +147,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //Normalization for cursor position and size;
     //cursor xy has the postion in a space of -1 to 1;
     //zw has the width and height
-    vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1.), normalize(iCursorCurrent.zw, 0.));
-    vec4 previousCursor = vec4(normalize(iCursorPrevious.xy, 1.), normalize(iCursorPrevious.zw, 0.));
+    vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
+    vec4 previousCursor = vec4(normalize(iPreviousCursor.xy, 1.), normalize(iPreviousCursor.zw, 0.));
 
     //When drawing a parellelogram between cursors for the trail i need to determine where to start at the top-left or top-right vertex of the cursor
     float vertexFactor = determineStartVertexFactor(currentCursor.xy, previousCursor.xy);

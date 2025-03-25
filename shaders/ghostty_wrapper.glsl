@@ -7,8 +7,8 @@ precision mediump float;
 
 uniform float u_time;
 uniform vec2 u_resolution;
-uniform vec4 iCursorCurrent;
-uniform vec4 iCursorPrevious;
+uniform vec4 iCurrentCursor;
+uniform vec4 iPreviousCursor;
 uniform float iTimeCursorChange;
 
 //$REPLACE$

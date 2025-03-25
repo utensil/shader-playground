@@ -120,8 +120,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     //Normalization for cursor position and size;
     //cursor xy has the postion in a space of -1 to 1;
     //zw has the width and height
-    vec4 currentCursor = vec4(normalize(iCursorCurrent.xy, 1.), normalize(iCursorCurrent.zw, 0.));
-    vec4 previousCursor = vec4(normalize(iCursorPrevious.xy, 1.), normalize(iCursorPrevious.zw, 0.));
+    vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
+    vec4 previousCursor = vec4(normalize(iPreviousCursor.xy, 1.), normalize(iPreviousCursor.zw, 0.));
 
     //When drawing a parellelogram between cursors for the trail i need to determine where to start at the top-left or top-right vertex of the cursor
     float vertexFactor = determineStartVertexFactor(currentCursor.xy, previousCursor.xy);
@@ -151,6 +151,4 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(cCursorDistance, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(cCursorDistance, -0.000, 0.003 * (1. - progress)));
     fragColor = mix(newColor, fragColor, step(cCursorDistance, 0.));
-    // float pCursorDistance = sdBox(vu, previousCursor.xy - (previousCursor.zw * offsetFactor), previousCursor.zw * 0.5);
-    // newColor = mix(newColor, PREVIOUS_CURSOR_COLOR, antialising(pCursorDistance));
 }
