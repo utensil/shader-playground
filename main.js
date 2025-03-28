@@ -16,12 +16,12 @@ function changeMode(_mode) {
   }
   switch (_mode) {
     case "auto":
-      setInterval(() => {
+      intervalId = setInterval(() => {
         changePresetPosition(1);
       }, INTERVAL);
       break;
     case "rnd":
-      setInterval(() => {
+      intervalId = setInterval(() => {
         randomCursor();
       }, INTERVAL);
       break;
