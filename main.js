@@ -59,9 +59,9 @@ let option = 0;
 Promise.all([
   fetch("/shaders/ghostty_wrapper.glsl").then((response) => response.text()),
   Promise.all([
-    fetch("/shaders/debug_cursor_animated.glsl").then((response) =>
-      response.text(),
-    ),
+    // fetch("/shaders/debug_cursor_animated.glsl").then((response) =>
+    //   response.text(),
+    // ),
     fetch("/shaders/cursor_blaze.glsl").then((response) => response.text()),
     fetch("/shaders/cursor_smear.glsl").then((response) => response.text()),
   ]),
@@ -129,9 +129,27 @@ function randomCursor() {
 }
 document.addEventListener("keydown", function (event) {
   if (event.key) {
+    let increment = { x: 0, y: 0 };
+    switch (event.key) {
+      case "Enter":
+      case "ArrowDown":
+        increment.y = -20;
+        break;
+      case "ArrowLeft":
+      case "Backspace":
+        increment.x = -10;
+        break;
+      case "ArrowUp":
+        increment.y = 20;
+        break;
+      default:
+        increment.x = 10;
+        break;
+    }
+
+    console.log(event.key);
     // You can specify a specific key if needed
-    const increment = 10;
-    moveCursor(currentCursor.x + increment, currentCursor.y);
+    moveCursor(currentCursor.x + increment.x, currentCursor.y + increment.y);
     setCursorUniforms();
   }
 });
