@@ -1,117 +1,196 @@
-const canvas = document.querySelector(".glslCanvas");
-canvas.width = document.body.clientWidth;
-canvas.height = document.body.clientHeight;
-const sandbox = new GlslCanvas(canvas);
+let cursorWidth = 10;
+let cursorHeight = 20;
+let mode = "click";
+let masterCanvas;
+const INTERVAL = 1000;
+let intervalId = undefined;
+function changeCursorType(x, y) {
+  cursorWidth = x;
+  cursorHeight = y;
+}
+
+function changeMode(_mode) {
+  mode = _mode;
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+  switch (_mode) {
+    case "auto":
+      setInterval(() => {
+        changePresetPosition(1);
+      }, INTERVAL);
+      break;
+    case "rnd":
+      setInterval(() => {
+        randomCursor();
+      }, INTERVAL);
+      break;
+    case "click":
+      break;
+  }
+}
+
+const playground = document.getElementById("playground");
+let sandboxes = [];
+window.addEventListener("resize", function () {
+  setGrid();
+});
+
+function setGrid() {
+  const isVertical = window.innerHeight > window.innerWidth;
+  const playground = document.getElementById("playground");
+  if (!playground) {
+    return;
+  }
+  let value = sandboxes.reduce((a, b) => a + " 1fr", "");
+  console.log(value);
+
+  if (isVertical) {
+    playground.style.gridTemplateColumns = "unset";
+    playground.style.gridTemplateRows = value;
+  } else {
+    playground.style.gridTemplateColumns = value;
+    playground.style.gridTemplateRows = "unset";
+  }
+}
 let previousCursor = { x: 0, y: 0, z: 10, w: 20 };
 let currentCursor = { x: 0, y: 0, z: 10, w: 20 };
 let option = 0;
-
 Promise.all([
-  fetch("/shaders/cursor_example.glsl").then((response) => response.text()),
   fetch("/shaders/ghostty_wrapper.glsl").then((response) => response.text()),
-]).then(([cursorFragment, ghosttyWrapper]) => {
-  const modifiedShader = ghosttyWrapper.replace("//$REPLACE$", cursorFragment);
-  sandbox.load(modifiedShader);
-  gameLoop();
+  Promise.all([
+    fetch("/shaders/debug_cursor_animated.glsl").then((response) =>
+      response.text(),
+    ),
+    fetch("/shaders/cursor_blaze.glsl").then((response) => response.text()),
+    fetch("/shaders/cursor_smear.glsl").then((response) => response.text()),
+  ]),
+]).then(([ghosttyWrapper, shaders]) => {
+  const wrapShader = (shader) => ghosttyWrapper.replace("//$REPLACE$", shader);
+  shaders.forEach((shader) => {
+    const sandbox = init(wrapShader(shader));
+    sandboxes.push(sandbox);
+  });
+  setGrid();
 });
 
-function setCursorUniforms() {
-  sandbox.setUniform(
-    "iCurrentCursor",
-    currentCursor.x,
-    currentCursor.y,
-    currentCursor.z,
-    currentCursor.w,
-  );
-  sandbox.setUniform(
-    "iPreviousCursor",
-    previousCursor.x,
-    previousCursor.y,
-    previousCursor.z,
-    previousCursor.w,
-  );
-  let now = sandbox.uniforms["u_time"].value[0];
-  sandbox.setUniform("iTimeCursorChange", now);
+function init(shader) {
+  const canvasWrapper = document.createElement("div");
+  canvasWrapper.className = "_canvas-wrapper";
+
+  const canvas = document.createElement("canvas");
+  canvasWrapper.appendChild(canvas);
+  playground.appendChild(canvasWrapper);
+  canvas.width = canvasWrapper.clientWidth;
+  canvas.height = canvasWrapper.clientHeight;
+  const sandbox = new GlslCanvas(canvas);
+  sandbox.load(shader);
+  canvas.addEventListener("click", (event) => {
+    if (mode != "click") {
+      return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = canvas.height - (event.clientY - rect.top);
+    console.log(x, y);
+    moveCursor(x, y);
+    setCursorUniforms();
+  });
+  masterCanvas = canvas;
+  return sandbox;
 }
-function updateCursor() {
-  previousCursor = { ...currentCursor };
-  const z = 10;
-  const w = 20;
-  const x = Math.random() * canvas.width;
-  const y = Math.random() * canvas.height;
-  currentCursor = { x: x, y: y, z: z, w: w };
+
+//
+function setCursorUniforms() {
+  sandboxes.forEach((sandbox) => {
+    sandbox.setUniform(
+      "iCurrentCursor",
+      currentCursor.x,
+      currentCursor.y,
+      currentCursor.z,
+      currentCursor.w,
+    );
+    sandbox.setUniform(
+      "iPreviousCursor",
+      previousCursor.x,
+      previousCursor.y,
+      previousCursor.z,
+      previousCursor.w,
+    );
+    let now = sandbox.uniforms["u_time"].value[0];
+    sandbox.setUniform("iTimeCursorChange", now);
+  });
+}
+function randomCursor() {
+  const x = Math.random() * masterCanvas.width;
+  const y = Math.random() * masterCanvas.height;
+  moveCursor(x, y);
   setCursorUniforms();
 }
+document.addEventListener("keydown", function (event) {
+  if (event.key) {
+    // You can specify a specific key if needed
+    const increment = 10;
+    moveCursor(currentCursor.x + increment, currentCursor.y);
+    setCursorUniforms();
+  }
+});
 function moveCursor(x, y) {
-  y = canvas.height - y;
   previousCursor = { ...currentCursor };
   currentCursor = {
     x: x,
     y: y,
-    z: 10,
-    w: 20,
+    z: cursorWidth,
+    w: cursorHeight,
   };
-  setCursorUniforms();
 }
-
-canvas.addEventListener("click", function (event) {
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  console.log(x, y);
-  moveCursor(x, y);
-  // changePresetPosition(1);
+document.addEventListener("click", function () {
+  if (mode != "auto") {
+    return;
+  }
+  changePresetPosition(1);
 });
-canvas.addEventListener("contextmenu", function (event) {
-  event.preventDefault(); // Prevent the default context menu from appearing
+
+document.addEventListener("contextmenu", function (event) {
+  event.preventDefault(); // Prevent default context menu from appearing
+  if (mode != "auto") {
+    return;
+  }
   changePresetPosition(-1);
 });
 
-function gameLoop() {
-  changePresetPosition(1);
-  // setInterval(updateCursor, 3000); // Change every 10 seconds
-}
+function changePresetPosition(increment) {
+  console.log("magia negra");
+  let bottom = masterCanvas.height * 0.1;
+  let top = masterCanvas.height * 0.9;
+  let left = masterCanvas.width * 0.1;
+  let right = masterCanvas.width * 0.9;
 
-function changePresetPosition(value) {
-  let top = canvas.height * 0.1;
-  let bottom = canvas.height * 0.9;
-  let left = canvas.width * 0.1;
-  let right = canvas.width * 0.9;
-
-  option = (option + value) % 8;
-  console.log(option);
+  option = (option + increment) % 7;
+  console.log(option, top, bottom, left, right);
   switch (option) {
     case 0:
       moveCursor(left, top);
-      moveCursor(right, bottom);
       break;
     case 1:
-      moveCursor(left, bottom);
-      moveCursor(right, top);
+      moveCursor(right, bottom);
       break;
     case 2:
-      moveCursor(right, bottom);
-      moveCursor(left, top);
+      moveCursor(right, top);
       break;
     case 3:
+      moveCursor(left, top);
+      break;
+    case 4:
+      moveCursor(left, bottom);
+      break;
+    case 5:
+      moveCursor(right, bottom);
+      break;
+    case 6:
       moveCursor(right, top);
       moveCursor(left, bottom);
       break;
-    case 4:
-      moveCursor(top, right);
-      moveCursor(bottom, right);
-      break;
-    case 5:
-      moveCursor(bottom, right);
-      moveCursor(top, right);
-      break;
-    case 6:
-      moveCursor(bottom, left);
-      moveCursor(bottom, right);
-      break;
-    case 7:
-      moveCursor(top, right);
-      moveCursor(top, left);
-      break;
   }
+  setCursorUniforms();
 }
