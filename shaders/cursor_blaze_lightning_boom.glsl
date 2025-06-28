@@ -288,9 +288,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 baseColor = mix(baseColor, boomColor, boomAlpha);
             }
             
-            // Realistic explosion with particles
-            float explosion = explosionRings(vu, cursorRightBottom, randSize);
-            
             // Dynamic color based on explosion intensity
             vec3 fireColor = mix(
                 vec3(1.0, 0.9, 0.3), // yellow core
