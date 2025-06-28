@@ -147,27 +147,30 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     rays = smoothstep(RAY_GAMMA*0.02-0.1, RAY_BRIGHTNESS+0.001, rays);
     rays = sqrt(rays);
     
-    // Extreme distance variation with multiple noise layers
+    // Limited but extreme splash variation
     float angle = atan(uv.y, uv.x);
     float dist = length(uv);
     
-    // Multi-frequency noise for extreme variation
+    // Limit maximum splash distance
+    float maxDist = radius * 1.5; // Hard limit on splash distance
+    dist = min(dist, maxDist);
+    
+    // Multi-frequency noise for variation within limits
     float noise1 = 0.5 + 0.5*sin(angle*12.0 + iTime*6.0 + dist*8.0);
     float noise2 = 0.5 + 0.5*sin(angle*5.0 + iTime*3.0 + dist*20.0);
-    float noise3 = 0.5 + 0.5*sin(angle*20.0 + iTime*10.0 + dist*3.0);
     
-    // Combine noises with different weights
-    float shapeNoise = mix(noise1, noise2, 0.7) * noise3 * 2.0;
-    shapeNoise = clamp(shapeNoise, 0.2, 1.8); // Allow extreme values
+    // Combine noises with distance-based weighting
+    float shapeNoise = mix(noise1, noise2, smoothstep(0.0, maxDist, dist)) * 1.5;
+    shapeNoise = clamp(shapeNoise, 0.5, 1.5); // Keep variations within bounds
     
-    // Apply non-linear scaling to the distance
-    float warpedDist = pow(dist, 1.0 + 0.8*sin(iTime*2.0)) * shapeNoise;
-    float baseShape = smoothstep(radius*0.9, radius*0.1, warpedDist);
+    // Apply non-linear scaling with distance falloff
+    float warpedDist = pow(dist, 1.0 + 0.5*sin(iTime*2.0)) * shapeNoise;
+    float baseShape = smoothstep(maxDist*0.8, maxDist*0.1, warpedDist);
     
-    // Extreme shockwave with multiple layers
-    float shockwave1 = 1.0 - smoothstep(0.0, radius*0.7, dist);
-    float shockwave2 = 1.0 - smoothstep(0.0, radius*1.2, dist*0.8);
-    float shockwave3 = 1.0 - smoothstep(0.0, radius*0.5, dist*1.5);
+    // Shockwave layers constrained to max distance
+    float shockwave1 = 1.0 - smoothstep(0.0, maxDist*0.5, dist);
+    float shockwave2 = 1.0 - smoothstep(0.0, maxDist*0.8, dist*0.8);
+    float shockwave3 = 1.0 - smoothstep(0.0, maxDist*0.3, dist*1.2);
     
     // Add chaotic turbulence
     float turbulence1 = sin(dist*30.0 - iTime*15.0) * 0.3;
