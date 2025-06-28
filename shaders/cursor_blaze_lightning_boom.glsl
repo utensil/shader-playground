@@ -209,21 +209,29 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             // Larger explosion (2x size) with directional randomness
             float randSize = 0.1 + 0.1 * pow(random(vec2(iTime*2.0, centerCP.x)), 3.0);
             
-            // Position closer to right bottom of cursor with some jitter
+            // Position firmly at bottom-right of cursor (accounting for macOS inverted Y)
             vec2 explosionPos = centerCP + vec2(
-                currentCursorData.z * (0.4 + 0.1 * random(vec2(iTime, centerCP.x))),
-                -currentCursorData.w * (0.4 + 0.1 * random(vec2(iTime, centerCP.y)))
+                currentCursorData.z * 0.5,  // Right offset
+                currentCursorData.w * 0.5  // Bottom offset (positive Y for bottom on macOS)
             );
             
-            // Multi-directional explosion effect
-            float explosion = 0.0;
-            for (int i = 0; i < 3; i++) {
+            // Add some jitter but keep it bottom-right
+            explosionPos += vec2(
+                random(vec2(iTime, centerCP.x)) * 0.05,
+                random(vec2(iTime, centerCP.y)) * 0.05
+            );
+            
+            // Explosion biased towards bottom-right direction
+            float explosion = explosionEffect(vu, explosionPos, randSize);
+            
+            // Add secondary explosions in bottom-right quadrant
+            for (int i = 0; i < 2; i++) {
                 vec2 dir = normalize(vec2(
-                    random(vec2(float(i), iTime)) - 0.5,
-                    random(vec2(float(i)*1.7, iTime+1.0)) - 0.5
+                    0.5 + random(vec2(float(i), iTime)) * 0.5,  // Right bias
+                    0.5 + random(vec2(float(i)*1.7, iTime+1.0)) * 0.5  // Bottom bias
                 ));
-                vec2 offsetPos = explosionPos + dir * randSize * 0.1;
-                explosion += explosionEffect(vu, offsetPos, randSize * (0.7 + 0.6*random(vec2(float(i), iTime))));
+                vec2 offsetPos = explosionPos + dir * randSize * 0.15;
+                explosion += explosionEffect(vu, offsetPos, randSize * 0.8);
             }
             explosion = clamp(explosion, 0.0, 1.0);
             
