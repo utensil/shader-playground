@@ -83,9 +83,9 @@ float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
     float d = 1000.;
     float dist = length(tgt-x);
      
-    // Main lightning path
+    // Main lightning path (inverted Y for macOS)
     for (int i = 0; i < 19; i++) {
-        if(r.y > x.y + 5.0) break;
+        if(r.y < x.y - 5.0) break;  // Changed > to < for inverted Y
         vec2 s = (noise2(r+iTime)+vec2(0.0,0.7))*2.0;
         dist = dseg(s,x-r);
         d = min(d,dist);
@@ -239,8 +239,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         
         // Lightning effect when moving right
         if (currentCursorData.x > previousCursorData.x) {
-            // Lightning strikes from top of screen (y = 1.0 in normalized coords)
-            vec2 lightningStart = vec2(centerCC.x, 1.0);
+            // Lightning strikes from top of screen (accounting for macOS inverted Y)
+            vec2 lightningStart = vec2(centerCC.x, -1.0);
             float lightning = lightningBranches(vu, lightningStart, centerCC, 0.01);
             
             // Core lightning color without glow effects
