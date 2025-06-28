@@ -104,6 +104,10 @@ vec2 getRectangleCenter(vec4 rectangle) {
     return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
 }
 
+vec4 permute(vec4 x) {
+    return mod(((x*34.0)+1.0)*x, 289.0);
+}
+
 // Classic Perlin noise implementations
 float cnoise(vec2 P) {
     vec3 Pi = floor(vec3(P.xyx)) + vec3(0.0, 0.0, 1.0);
@@ -146,9 +150,6 @@ float cnoise(vec2 P) {
     return 2.3 * n_xy;
 }
 
-vec4 permute(vec4 x) {
-    return mod(((x*34.0)+1.0)*x, 289.0);
-}
 vec4 taylorInvSqrt(vec4 r) {
     return 1.79284291400159 - 0.85373472095314 * r;
 }
