@@ -1,3 +1,5 @@
+#define ENABLE_LIGHTNING 0 // Set to 1 to enable lightning effect
+
 /* IMPLEMENTATION NOTES PRESERVED AS COMMENTS
 // Cursor Blaze Lightning Effect Implementation
 
@@ -143,17 +145,20 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     // Initialize color first
     vec4 newColor = vec4(fragColor);
     
-    // Debug lightning activation
+    // Lightning activation check
+    bool should_lightning = false;
+    #if ENABLE_LIGHTNING >= 1
     vec2 prev_pos = iCurrentCursor.xy;
     vec2 curr_pos = iCurrentCursor.zw;
     float delta_x = curr_pos.x - prev_pos.x;
     float delta_y = abs(curr_pos.y - prev_pos.y);
-    bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
+    should_lightning = delta_x > 0.0 && delta_y < 2.0;
     
-    // Simple activation debug in corner (green when active, red when not)
+    // Debug visualization
     if (fragCoord.x < 20.0 && fragCoord.y < 20.0) {
         newColor.rgb = should_lightning ? vec3(0,1,0) : vec3(1,0,0);
     }
+    #endif
     vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
     
@@ -165,17 +170,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor.rgb = vec3(curr_pos.x/iResolution.x, curr_pos.y/iResolution.y, 0);
     }
     
-    // Initialize origin at cursor position (in normalized coordinates)
+    // Lightning origin setup
     vec2 origin = curr_pos;
-    
-    // Calculate origin zone if lightning should activate
+    #if ENABLE_LIGHTNING >= 1
     if (should_lightning) {
         float screen_width = iResolution.x;
         float travel_dist = delta_x;
         float zone_width = min(travel_dist * 0.3, screen_width * 0.4);
         float zone_top = iResolution.y * 0.1;
         
-        // Generate random origin points within zone
         float rand1 = fract(sin(dot(vec2(iTime, 0.5), vec2(12.9898,78.233))) * 43758.5453);
         float rand2 = fract(sin(dot(vec2(iTime, 1.0), vec2(12.9898,78.233))) * 43758.5453);
         origin = vec2(
@@ -183,6 +186,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
             zone_top + rand2 * (iResolution.y * 0.05)
         );
     }
+    #endif
 
     vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
     vec4 previousCursor = vec4(normalize(iPreviousCursor.xy, 1.), normalize(iPreviousCursor.zw, 0.));
@@ -225,13 +229,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
     }
     
-    // Basic lightning visualization
+    #if ENABLE_LIGHTNING >= 1
     if (should_lightning) {
         vec2 target = curr_pos;
         float branch = drawLightningBranch(fragCoord/iResolution.xy, origin, target, LIGHTNING_WIDTH);
         vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, 0.5);
         newColor.rgb = mix(newColor.rgb, lightning_color, branch * 0.5);
     }
+    #endif
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     // Lightning activation flash
     if (should_lightning) {
