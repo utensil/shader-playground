@@ -102,7 +102,48 @@ vec2 getRectangleCenter(vec4 rectangle) {
     return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
 }
 
-// Classic Perlin noise implementation
+// Classic Perlin noise implementations
+float cnoise(vec2 P) {
+    vec3 Pi = floor(vec3(P.xyx)) + vec3(0.0, 0.0, 1.0);
+    vec3 Pf = fract(vec3(P.xyx)) - vec3(0.0, 0.0, 1.0);
+    Pi = mod(Pi, 289.0);
+    vec4 ix = vec4(Pi.x, Pi.z, Pi.x, Pi.z);
+    vec4 iy = vec4(Pi.yy, Pi.yy + 1.0);
+    vec4 fx = vec4(Pf.x, Pf.z, Pf.x, Pf.z);
+    vec4 fy = vec4(Pf.yy, Pf.yy + 1.0);
+    
+    vec4 i = permute(permute(ix) + iy);
+    vec4 gx = fract(i / 41.0) * 2.0 - 1.0;
+    vec4 gy = abs(gx) - 0.5;
+    vec4 tx = floor(gx + 0.5);
+    gx = gx - tx;
+    
+    vec2 g00 = vec2(gx.x, gy.x);
+    vec2 g10 = vec2(gx.y, gy.y);
+    vec2 g01 = vec2(gx.z, gy.z);
+    vec2 g11 = vec2(gx.w, gy.w);
+    
+    float norm00 = dot(g00, g00);
+    float norm01 = dot(g01, g01);
+    float norm10 = dot(g10, g10);
+    float norm11 = dot(g11, g11);
+    
+    g00 *= inversesqrt(norm00);
+    g01 *= inversesqrt(norm01);
+    g10 *= inversesqrt(norm10);
+    g11 *= inversesqrt(norm11);
+    
+    float n00 = dot(g00, vec2(fx.x, fy.x));
+    float n10 = dot(g10, vec2(fx.y, fy.y));
+    float n01 = dot(g01, vec2(fx.z, fy.z));
+    float n11 = dot(g11, vec2(fx.w, fy.w));
+    
+    vec2 fade_xy = fade(Pf.xy);
+    vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+    float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+    return 2.3 * n_xy;
+}
+
 vec4 permute(vec4 x) {
     return mod(((x*34.0)+1.0)*x, 289.0);
 }
@@ -205,9 +246,8 @@ float fbm(vec2 p) {
     float amp = 0.5;
     float noise = 0.0;
     for(int i=0; i<3; i++) {
-        noise += amp * cnoise(p);
+        noise += amp * cnoise(p * exp2(float(i)));
         amp *= 0.5;
-        p *= 2.0;
     }
     return noise;
 }
