@@ -200,22 +200,22 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         } 
         // Explosion effect when moving left
         else {
-            // Adjust the 0.5 multiplier to change explosion size (smaller = smaller explosion)
-            float explosion = explosionRings(vu, centerCP, lineLength * 0.4); 
+            // Increased size and intensity
+            float explosion = explosionRings(vu, centerCP, lineLength * 0.7); 
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
             float ringMask = smoothstep(0.3, 0.7, explosion);
             float debrisMask = smoothstep(0.1, 0.4, explosion);
             
-            // Multi-layered color blending
-            vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 2.5;
-            explosionColor = mix(explosionColor, EXPLOSION_CORE2_COLOR, coreMask*1.8);
-            explosionColor = mix(explosionColor, EXPLOSION_HOT1_COLOR, ringMask*1.8);
-            explosionColor = mix(explosionColor, EXPLOSION_HOT2_COLOR, ringMask*1.3);
-            explosionColor = mix(explosionColor, EXPLOSION_MID1_COLOR, ringMask*0.9);
-            explosionColor = mix(explosionColor, EXPLOSION_MID2_COLOR, ringMask*0.5);
-            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*0.3);
+            // More intense color blending
+            vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 3.5;
+            explosionColor = mix(explosionColor, EXPLOSION_CORE2_COLOR, coreMask*2.5);
+            explosionColor = mix(explosionColor, EXPLOSION_HOT1_COLOR, ringMask*2.5);
+            explosionColor = mix(explosionColor, EXPLOSION_HOT2_COLOR, ringMask*2.0);
+            explosionColor = mix(explosionColor, EXPLOSION_MID1_COLOR, ringMask*1.5);
+            explosionColor = mix(explosionColor, EXPLOSION_MID2_COLOR, ringMask*1.0);
+            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*0.8);
             
             // Super-bright glowing debris
             vec4 debrisColor = DEBRIS_COLOR * (1.2 + 0.8*sin(iTime*12.0));
@@ -225,7 +225,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             explosionColor = mix(explosionColor, SMOKE_COLOR, 
                                smoothstep(0.3, 0.6, explosion)*0.9);
             
-            float explosionAlpha = explosion * (1.0 - progress) * 0.9;
+            float explosionAlpha = explosion * (1.0 - progress) * 1.5;
             baseColor = mix(baseColor, explosionColor, explosionAlpha);
         }
     }
