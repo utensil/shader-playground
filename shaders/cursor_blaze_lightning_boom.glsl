@@ -3,6 +3,11 @@
 // Uses pre-declared uniforms from the cursor system:
 // iResolution, iTime, iCurrentCursor, iPreviousCursor, iTimeCursorChange, iChannel0
 
+// Random number generator must be defined first
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+}
+
 // Color schemes - uncomment your preferred one
 // Original blue-white scheme
 //#define COLOR_SCHEME_BLUE
@@ -44,10 +49,6 @@ const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.5, 0.1, 1.0);      // Orange
 const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.3, 0.0, 1.0);      // Orange-red
 const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.2, 0.0, 1.0);      // Red
 const vec4 EXPLOSION_COOL_COLOR = vec4(0.8, 0.1, 0.0, 1.0);      // Deep red
-
-float random(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-}
 
 float distanceToLine(vec2 p, vec2 a, vec2 b) {
     vec2 pa = p - a;
