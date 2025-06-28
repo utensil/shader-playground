@@ -2,8 +2,19 @@
 // Uses pre-declared uniforms from the cursor system:
 // iResolution, iTime, iCurrentCursor, iPreviousCursor, iTimeCursorChange, iChannel0
 
-const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
-const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
+// Color schemes - uncomment your preferred one
+// Original blue-white scheme
+//#define COLOR_SCHEME_BLUE
+// Gold-purple scheme
+#define COLOR_SCHEME_GOLD_PURPLE
+
+#ifdef COLOR_SCHEME_GOLD_PURPLE
+    const vec4 LIGHTNING_CORE_COLOR = vec4(1.0, 0.9, 0.2, 1.0);  // Gold core
+    const vec4 LIGHTNING_EDGE_COLOR = vec4(0.7, 0.2, 1.0, 0.7); // Purple edges
+#else
+    const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);  // Blue-white core
+    const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);  // Blue edges
+#endif
 // Inspired by https://www.shadertoy.com/view/4d2XR1
 #define RAY_BRIGHTNESS 12.0
 #define RAY_DENSITY 5.0
@@ -246,8 +257,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 lightningCC = vec2(centerCC.x, -centerCC.y);
             float lightning = lightningBranches(lightningVu, lightningStart, lightningCC, 0.01);
             
-            // Core lightning color without glow effects
+            // Core lightning color with optional glow
             vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
+            #ifdef COLOR_SCHEME_GOLD_PURPLE
+                // Add golden glow for this scheme
+                lightningColor.rgb += vec3(0.1, 0.08, 0.0) * lightning * 0.5;
+            #endif
             float lightningAlpha = lightning * (1.0 - progress) * 1.2;
             
             baseColor = mix(baseColor, lightningColor, lightningAlpha);
