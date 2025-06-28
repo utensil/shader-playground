@@ -21,9 +21,10 @@ When the cursor moves left, a highly realistic explosion effect is triggered:
   - Radial brightness falloff with turbulence
 
 - **Shockwave**: 
-  - Propagating spherical front with Mach wave distortion
+  - Asymmetric propagation with 3-5 main lobes
+  - Directionally-biased pressure waves
   - Temperature gradient from white-hot (2000K) to red (1000K)
-  - Subtle turbulence patterns simulating air disruption
+  - Organic turbulence patterns based on angular displacement
 
 - **Debris Field**:
   - 20+ high-velocity particles with randomized:

@@ -69,22 +69,34 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     float core = smoothstep(radius*0.15, 0.0, dist) * 4.0 * flicker;
     d += core * (1.0 + 0.5*sin(angle*12.0 + iTime*8.0));
     
-    // Organic layered rings with noise
-    float ring1 = smoothstep(radius*0.4, radius*0.2, 
-                           dist*(0.8 + 0.2*sin(iTime*6.0 + angle*5.0))) * 1.0;
-    float ring2 = smoothstep(radius*0.6, radius*0.3, 
-                           dist*(0.7 + 0.3*cos(iTime*4.0 + angle*7.0))) * 0.8;
-    float ring3 = smoothstep(radius*0.9, radius*0.5, 
-                           dist*(1.0 + 0.3*sin(iTime*8.0 + angle*3.0))) * 0.6;
+    // Asymmetric explosion lobes with directional bias
+    float lobe1 = smoothstep(radius*0.5, radius*0.2, 
+                           dist*(0.7 + 0.3*sin(iTime*5.0 + angle*3.0))) * 
+                  (0.8 + 0.2*sin(angle*4.0 + iTime*2.0));
+    float lobe2 = smoothstep(radius*0.6, radius*0.25, 
+                           dist*(0.6 + 0.4*cos(iTime*3.0 + angle*5.0))) * 
+                  (0.7 + 0.3*cos(angle*6.0 - iTime*1.5));
+    float lobe3 = smoothstep(radius*0.8, radius*0.4, 
+                           dist*(0.9 + 0.1*sin(iTime*7.0 + angle*7.0))) * 
+                  (0.6 + 0.4*sin(angle*2.0 + iTime*3.0));
     
-    d += mix(ring1, ring2, 0.5) + ring3;
+    // Combine lobes with directional weighting
+    d += max(lobe1, max(lobe2*0.8, lobe3*0.6));
     
-    // Debris effect with more randomness
+    // Debris with directional clusters
     for(int i = 0; i < 20; i++) {
-        // Random direction and speed for each particle
-        float rnd1 = random(vec2(float(i), iTime*0.3));
-        float rnd2 = random(vec2(float(i)*1.3, iTime*0.4));
-        vec2 dir = normalize(vec2(rnd1-0.5, rnd2-0.5));
+        // Create clustered ejection patterns
+        float cluster = floor(float(i)/5.0);
+        float rnd1 = random(vec2(float(i), iTime*0.3 + cluster));
+        float rnd2 = random(vec2(float(i)*1.3, iTime*0.4 + cluster));
+        
+        // Bias directions based on cluster
+        vec2 baseDir = vec2(sin(cluster*2.0), cos(cluster*1.5));
+        vec2 dir = normalize(mix(
+            vec2(rnd1-0.5, rnd2-0.5), 
+            baseDir, 
+            0.7
+        ));
         
         // Particle movement with acceleration
         float speed = 0.5 + rnd1*0.5;
