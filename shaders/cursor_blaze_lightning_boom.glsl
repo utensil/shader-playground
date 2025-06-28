@@ -278,7 +278,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float explosion = explosionRings(vu, explosionPos, randSize);
             
             // Apply reference shader's color inversion
-            vec3 col = rays * vec3(RAY_RED, RAY_GREEN, RAY_BLUE);
+            vec3 col = vec3(RAY_RED, RAY_GREEN, RAY_BLUE);
             col = 1.0 - col;
             
             // Layered colors for different effects
