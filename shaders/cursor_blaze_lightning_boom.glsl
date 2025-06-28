@@ -34,25 +34,71 @@ float distanceToLine(vec2 p, vec2 a, vec2 b) {
     return length(pa - ba * h);
 }
 
+// Inspired by https://www.shadertoy.com/view/XlsGWS
+// Created by S.Guillitte (CC BY-NC-SA 3.0)
+
+float hash(float x) {
+    return fract(21654.6512 * sin(385.51 * x));
+}
+
+float hash(vec2 p) {
+    return fract(sin(p.x*15.32+p.y*35.78) * 43758.23);
+}
+
+vec2 hash2(vec2 p) {
+    return vec2(hash(p*.754),hash(1.5743*p.yx+4.5891))-.5;
+}
+
+vec2 noise2(vec2 x) {
+    vec2 p = floor(x);
+    vec2 f = fract(x);
+    f = f*f*(3.0-2.0*f);
+    vec2 res = mix(mix(hash2(p), hash2(p + vec2(1.0,0.0)),f.x),
+                   mix(hash2(p + vec2(0.0,1.0)), hash2(p + vec2(1.0,1.0)),f.x),f.y);
+    return res;
+}
+
+float dseg(vec2 ba, vec2 pa) {
+    float h = clamp(dot(pa,ba)/dot(ba,ba), -0.2, 1.);
+    return length(pa - ba*h);
+}
+
+float arc(vec2 x, vec2 p, vec2 dir) {
+    vec2 r = p;
+    float d = 10.;
+    for (int i = 0; i < 5; i++) {
+        vec2 s = noise2(r+iTime)+dir;
+        d = min(d,dseg(s,x-r));
+        r += s;
+    }
+    return d*3.;
+}
+
 float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
-    float d = 0.0;
-    vec2 dir = normalize(end - start);
-    vec2 perp = vec2(-dir.y, dir.x);
+    // Convert to reference shader's coordinate space
+    vec2 x = (p - start) * 10.0;
+    vec2 tgt = (end - start) * 10.0;
     
+    vec2 r = tgt;
+    float d = 1000.;
+    float dist = length(tgt-x);
+     
     // Main lightning path
-    float mainDist = distanceToLine(p, start, end);
-    d = smoothstep(width, 0.0, mainDist);
-    
-    // Add branches
-    float branchCount = 5.0;
-    for(float i = 0.0; i < branchCount; i++) {
-        float t = random(vec2(i, iTime)) * 0.5 + 0.3;
-        vec2 branchStart = mix(start, end, t);
-        vec2 branchEnd = branchStart + perp * (random(vec2(i+1.0, iTime)) * 0.2 - 0.1) * length(end - start);
-        d += smoothstep(width*0.5, 0.0, distanceToLine(p, branchStart, branchEnd)) * 0.5;
+    for (int i = 0; i < 19; i++) {
+        if(r.y > x.y + 5.0) break;
+        vec2 s = (noise2(r+iTime)+vec2(0.0,0.7))*2.0;
+        dist = dseg(s,x-r);
+        d = min(d,dist);
+        
+        r += s;
+        if(i-(i/5)*5==0) {
+            if(i-(i/10)*10==0) d = min(d,arc(x,r,vec2(0.3,0.5)));
+            else d = min(d,arc(x,r,vec2(-0.3,0.5)));
+        }
     }
     
-    return clamp(d, 0.0, 1.0);
+    float lightning = exp(-5.0*d) + 0.2*exp(-1.0*dist);
+    return clamp(lightning, 0.0, 1.0);
 }
 
 // Noise function inspired by reference shader
@@ -196,8 +242,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             // Lightning strikes from top of screen (y = -1.0 in normalized coords for macOS)
             vec2 lightningStart = vec2(centerCC.x, -1.0);
             float lightning = lightningBranches(vu, lightningStart, centerCC, 0.01);
+            
+            // Add blue glow effect inspired by reference
+            vec3 glow = vec3(0.3,0.5,1.0) * (1.0-(hash(vu+iTime*0.1)))*0.5;
+            
             vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
-            float lightningAlpha = lightning * (1.0 - progress) * 0.7;
+            lightningColor.rgb += glow;
+            float lightningAlpha = lightning * (1.0 - progress) * 1.2; // Increased intensity
+            
+            // Add subtle storm background effect
+            vec2 stormCoord = (5.0*vu+0.2)*abs(vu.y)+0.7*iTime;
+            float storm = hash(stormCoord)*0.3;
+            baseColor.rgb += storm * vec3(0.4,0.5,1.0);
+            
             baseColor = mix(baseColor, lightningColor, lightningAlpha);
         }
         // Explosion effect when moving left
