@@ -141,6 +141,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     #endif
     
     // Initialize color first
+    vec4 newColor = vec4(fragColor);
     
     // Debug lightning activation
     vec2 prev_pos = iCurrentCursor.xy;
@@ -149,9 +150,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float delta_y = abs(curr_pos.y - prev_pos.y);
     bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
     
-    // Simple activation debug in corner
-    if (fragCoord.x < 30.0 && fragCoord.y < 30.0) {
-        newColor.rgb = should_lightning ? vec3(0,1,0) : vec3(0.5,0.5,0.5);
+    // Simple activation debug in corner (green when active, red when not)
+    if (fragCoord.x < 20.0 && fragCoord.y < 20.0) {
+        newColor.rgb = should_lightning ? vec3(0,1,0) : vec3(1,0,0);
     }
     vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
@@ -164,8 +165,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor.rgb = vec3(curr_pos.x/iResolution.x, curr_pos.y/iResolution.y, 0);
     }
     
-    // Initialize origin at cursor position
-    vec2 origin = curr_pos;
+    // Initialize origin at cursor position (in screen coordinates)
+    vec2 origin = curr_pos * iResolution.xy;
     
     // Calculate origin zone if lightning should activate
     if (should_lightning) {
@@ -226,12 +227,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
     }
     
-    // Strong visual indicator when lightning is active
+    // Basic lightning visualization
     if (should_lightning) {
-        vec4 lightning_tint = vec4(0.7, 0.2, 1.0, 1.0); // Purple color
-        newColor = mix(newColor, lightning_tint, 0.8); // 80% purple blend
+        vec2 target = curr_pos * iResolution.xy;
+        float branch = drawLightningBranch(fragCoord, origin, target, LIGHTNING_WIDTH * iResolution.y);
+        vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, 0.5);
+        newColor.rgb = mix(newColor.rgb, lightning_color, branch);
     }
-    newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     // Lightning activation flash
     if (should_lightning) {
