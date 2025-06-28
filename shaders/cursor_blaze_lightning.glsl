@@ -206,18 +206,28 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
     }
     
+    // Add lightning activation debug to trail
+    if (should_lightning) {
+        newColor = mix(newColor, vec4(1.0, 0.0, 0.0, 1.0), 0.3); // Red tint when active
+    }
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
-    // Basic lightning visualization (straight line)
+    // Debug lightning visualization
     if (should_lightning) {
         vec2 target = curr_pos;
-        float branch = drawLightningBranch(fragCoord, origin, target, LIGHTNING_WIDTH);
-        float fade = smoothstep(0.0, 0.3, distance(fragCoord, 0.5*(origin+target)));
-        vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, fade);
-        // Add glow
-        float glow = smoothstep(0.1, 0.0, distance(fragCoord, 0.5*(origin+target)));
-        lightning_color += glow * 0.3 * CORE_COLOR;
-        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 1.0);  // Full opacity
+        // Convert to normalized device coordinates
+        vec2 screen_origin = origin * iResolution.xy;
+        vec2 screen_target = target * iResolution.xy;
+        float branch = drawLightningBranch(fragCoord, screen_origin, screen_target, LIGHTNING_WIDTH * iResolution.y);
+        // Debug colors - make lightning very obvious
+        vec3 lightning_color = vec3(1.0, 0.0, 0.0); // Pure red for testing
+        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 1.0);
+        
+        // Debug output to console
+        // (Remove this after testing)
+        if (fragCoord.x < 10.0 && fragCoord.y < 10.0) {
+            newColor.rgb = vec3(should_lightning ? 1.0 : 0.0); // Top-left corner shows activation
+        }
     }
     
     fragColor = mix(newColor, fragColor, step(sdfCursor, 0.));
