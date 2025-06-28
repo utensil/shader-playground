@@ -33,7 +33,6 @@ const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.2, 0.0, 0.8);      // Red-orange
 const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.25, 0.0, 0.7);      // Orange-red
 const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.3, 0.0, 0.6);       // Orange
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
-const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
@@ -207,19 +206,6 @@ float explosionRings(vec2 p, vec2 center, float radius) {
         d += smoothstep(size, 0.0, distance(p, debrisPos)) * 0.4;
     }
     
-    // Smoke wisps
-    for(int i = 0; i < 10; i++) {
-        float rnd = random(vec2(float(i), iTime*0.2));
-        vec2 dir = vec2(sin(float(i)*1.5), cos(float(i)*1.3));
-        float offset = 0.3 + 0.7*rnd;
-        vec2 smokePos = center + dir * radius * offset * (0.5 + 0.5*sin(iTime*2.0));
-        
-        // Animated smoke density
-        float density = 0.5 + 0.5*sin(iTime*3.0 + float(i));
-        float smoke = smoothstep(radius*0.1, 0.0, distance(p, smokePos)) * density;
-        d = mix(d, d*0.7, smoke);
-    }
-    
     return clamp(d * shockwave, 0.0, 1.0);
 }
 
@@ -317,10 +303,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             // Super-bright glowing debris
             vec4 debrisColor = DEBRIS_COLOR * (1.2 + 0.8*sin(iTime*12.0));
             explosionColor = mix(explosionColor, debrisColor, debrisMask*2.0);
-            
-            // Deep smoke for maximum contrast
-            explosionColor = mix(explosionColor, SMOKE_COLOR, 
-                               smoothstep(0.3, 0.6, explosion)*0.9);
             
             // Longer duration (0.2s instead of 0.1s) and brighter colors
             float explosionAlpha = explosion * (1.0 - (progress * 0.5)) * 2.0;
