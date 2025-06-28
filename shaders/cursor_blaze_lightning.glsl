@@ -108,6 +108,8 @@ vec4 permute(vec4 x) {
     return mod(((x*34.0)+1.0)*x, 289.0);
 }
 
+// Fade functions for different dimensions
+
 // Classic Perlin noise implementations
 float cnoise(vec2 P) {
     vec3 Pi = floor(vec3(P.xyx)) + vec3(0.0, 0.0, 1.0);
