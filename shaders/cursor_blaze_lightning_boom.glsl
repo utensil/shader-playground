@@ -77,8 +77,8 @@ float rayFbm(vec2 p) {
 float explosionRings(vec2 p, vec2 center, float radius) {
     float d = 0.0;
     
-    // Create organic shape with ray-inspired patterns
-    vec2 uv = p - center;
+    // Convert to pixel coordinates for consistent sizing
+    vec2 uv = (p - center) * iResolution.y;
     uv *= RAY_CURVATURE / radius;
     
     float dist = length(uv);
@@ -142,8 +142,8 @@ float explosionRings(vec2 p, vec2 center, float radius) {
         float t = mod(iTime*(0.5 + rnd2), 1.0);
         vec2 debrisPos = center + dir * radius * (t * speed + t*t * 0.5);
         
-        // More varied particle sizes
-        float size = mix(0.01, 0.15, rnd1) * radius; // Wider size range
+        // Fixed pixel-based particle sizes (2-15 pixels)
+        float size = mix(2.0, 15.0, rnd1); 
         d += smoothstep(size, 0.0, distance(p, debrisPos)) * 0.4;
     }
     
@@ -200,9 +200,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         } 
         // Explosion effect when moving left
         else {
-            // 10x smaller explosion size (0.03-0.07 of screen height)
-            float randSize = 0.03 + 0.04 * random(vec2(iTime, centerCP.x));
-            float explosion = explosionRings(vu, centerCP, iResolution.y * randSize);
+            // Fixed pixel-based explosion size (50-100 pixels)
+            float randSize = 50.0 + 50.0 * random(vec2(iTime, centerCP.x));
+            float explosion = explosionRings(vu, centerCP, randSize);
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
