@@ -136,14 +136,14 @@ float explosionEffect(vec2 p, vec2 center, float radius) {
     float dist = length(uv);
     float angle = atan(uv.y, uv.x);
     
-    // Extreme core with sharp edges
-    float core = pow(smoothstep(0.5, 0.0, dist), 0.5) * 3.0;
+    // More intense core for small size
+    float core = pow(smoothstep(0.3, 0.0, dist), 0.3) * 4.0;
     
-    // Chaotic shockwaves with sharp contrast
-    float shockwave1 = smoothstep(0.15, 0.0, abs(dist - 0.25)) * 
-                      (0.8 + 0.4 * sin(angle * 8.0 + iTime * 30.0));
-    float shockwave2 = smoothstep(0.1, 0.0, abs(dist - 0.4)) * 
-                      (0.6 + 0.4 * cos(angle * 5.0 - iTime * 20.0));
+    // Tighter shockwaves with higher frequency
+    float shockwave1 = smoothstep(0.1, 0.0, abs(dist - 0.15)) * 
+                      (0.9 + 0.5 * sin(angle * 12.0 + iTime * 50.0));
+    float shockwave2 = smoothstep(0.08, 0.0, abs(dist - 0.25)) * 
+                      (0.7 + 0.5 * cos(angle * 8.0 - iTime * 30.0));
     
     // Combine with extreme contrast
     float explosion = max(core, max(shockwave1, shockwave2));
@@ -204,8 +204,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Simple small explosion
-            float randSize = 0.1 + 0.1 * random(vec2(iTime, centerCP.x));
+            // Tiny explosion (3x smaller)
+            float randSize = 0.033 + 0.033 * random(vec2(iTime, centerCP.x));
             vec2 explosionPos = centerCP;
             float explosion = explosionEffect(vu, explosionPos, randSize);
             
@@ -219,12 +219,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 pow(explosion, 0.7)
             );
             
-            // Add white hot sparks
+            // Add white hot sparks (more intense to compensate for smaller size)
             float sparks = smoothstep(0.8, 1.0, explosion) * 
-                         (0.9 + 0.1 * sin(iTime * 100.0 + explosionUV.x * 100.0));
-            fireColor = mix(fireColor, vec3(1.0), sparks * 0.8);
+                         (0.9 + 0.1 * sin(iTime * 200.0 + explosionUV.x * 200.0));
+            fireColor = mix(fireColor, vec3(1.0), sparks * 1.0);
             
-            float explosionAlpha = explosion * (1.0 - progress) * 2.0;
+            float explosionAlpha = explosion * (1.0 - progress) * 3.0; // More intense
             baseColor.rgb = max(baseColor.rgb, fireColor * explosionAlpha);
         }
     }
