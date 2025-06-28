@@ -15,23 +15,23 @@
     const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);  // Blue-white core
     const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);  // Blue edges
 #endif
-// Unified ray parameters for red/orange explosion
-#define RAY_BRIGHTNESS 12.0
-#define RAY_GAMMA 5.0
-#define RAY_DENSITY 4.5
-#define RAY_CURVATURE 15.0
-#define RAY_RED 4.0
-#define RAY_GREEN 0.0
-#define RAY_BLUE 0.0
+// Balanced ray parameters for fire explosion
+#define RAY_BRIGHTNESS 8.0
+#define RAY_GAMMA 3.0
+#define RAY_DENSITY 3.5
+#define RAY_CURVATURE 10.0
+#define RAY_RED 2.5
+#define RAY_GREEN 1.0
+#define RAY_BLUE 0.3
 
-// Pure red/orange/yellow explosion colors
-const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.9, 0.1, 1.0);    // Bright yellow core
-const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.7, 0.1, 1.0);    // Yellow-orange
-const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.5, 0.0, 1.0);     // Orange
-const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.3, 0.0, 1.0);     // Red-orange
-const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);     // Bright red
-const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.1, 0.0, 1.0);     // Deep red
-const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.05, 0.0, 1.0);    // Dark red
+// Balanced fire explosion colors
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.95, 0.7, 1.0);   // White-hot core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.85, 0.3, 1.0);   // Bright yellow
+const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.7, 0.2, 1.0);      // Yellow-orange 
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.5, 0.1, 1.0);      // Orange
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.3, 0.0, 1.0);      // Orange-red
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.2, 0.0, 1.0);      // Red
+const vec4 EXPLOSION_COOL_COLOR = vec4(0.8, 0.1, 0.0, 1.0);      // Deep red
 
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
