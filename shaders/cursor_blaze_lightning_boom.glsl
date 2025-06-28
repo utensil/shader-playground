@@ -6,6 +6,7 @@ layout(std140, binding = 0) uniform Uniforms {
     vec4 previousCursor;
     float timeCursorChange;
 };
+uniform sampler2D iChannel0;
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
@@ -100,7 +101,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         if (currentCursorData.x > previousCursorData.x) {
             float lightning = lightningBranches(vu, centerCP, centerCC, 0.01);
             vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
-            baseColor = mix(baseColor, lightningColor, lightning * (1.0 - progress));
+            float lightningAlpha = lightning * (1.0 - progress) * 0.7; // Reduced intensity
+            baseColor = mix(baseColor, lightningColor, lightningAlpha);
         } 
         // Explosion effect when moving left
         else {
@@ -111,7 +113,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 explosion
             );
             explosionColor = mix(explosionColor, EXPLOSION_CORE_COLOR, smoothstep(0.5, 1.0, explosion));
-            baseColor = mix(baseColor, explosionColor, explosion * (1.0 - progress));
+            float explosionAlpha = explosion * (1.0 - progress) * 0.7; // Reduced intensity
+            baseColor = mix(baseColor, explosionColor, explosionAlpha);
         }
     }
     
