@@ -272,9 +272,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Bigger explosion with more variance at right-bottom of cursor
-            float randSize = 150.0 + 200.0 * random(vec2(iTime, centerCP.x)); // Larger base size and variance
-            vec2 cursorRightBottom = centerCP + vec2(currentCursorData.z * 0.5, -currentCursorData.w * 0.5);
+            // Bigger explosion at right-bottom of cursor (accounting for macOS inverted Y)
+            float randSize = 150.0 + 200.0 * random(vec2(iTime, centerCP.x));
+            vec2 cursorRightBottom = centerCP + vec2(
+                currentCursorData.z * 0.5, 
+                currentCursorData.w * 0.5  // Positive Y for bottom on macOS
+            );
             vec2 explosionPos = cursorRightBottom;
             float explosion = explosionRings(vu, explosionPos, randSize);
             
