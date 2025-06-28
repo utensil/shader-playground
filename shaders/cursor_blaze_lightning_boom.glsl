@@ -9,13 +9,24 @@
 // Gold-purple scheme
 #define COLOR_SCHEME_GOLD_PURPLE
 
-#ifdef COLOR_SCHEME_GOLD_PURPLE
-    const vec4 LIGHTNING_CORE_COLOR = vec4(1.0, 0.9, 0.2, 1.0);  // Gold core
-    const vec4 LIGHTNING_EDGE_COLOR = vec4(0.7, 0.2, 1.0, 0.7); // Purple edges
-#else
-    const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);  // Blue-white core
-    const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);  // Blue edges
-#endif
+// Randomly choose between color schemes based on time and position
+vec4 getLightningCoreColor(vec2 pos) {
+    float choice = random(vec2(floor(iTime * 0.5), pos.x * 100.0 + pos.y * 50.0));
+    if (choice > 0.5) {
+        return vec4(1.0, 0.9, 0.2, 1.0);  // Gold core
+    } else {
+        return vec4(0.8, 0.9, 1.0, 1.0);  // Blue-white core
+    }
+}
+
+vec4 getLightningEdgeColor(vec2 pos) {
+    float choice = random(vec2(floor(iTime * 0.5), pos.x * 100.0 + pos.y * 50.0));
+    if (choice > 0.5) {
+        return vec4(0.7, 0.2, 1.0, 0.7); // Purple edges
+    } else {
+        return vec4(0.4, 0.6, 1.0, 0.7);  // Blue edges
+    }
+}
 // Balanced ray parameters for fire explosion
 #define RAY_BRIGHTNESS 8.0
 #define RAY_GAMMA 3.0
@@ -194,12 +205,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 lightningCC = vec2(centerCC.x, -centerCC.y);
             float lightning = lightningBranches(lightningVu, lightningStart, lightningCC, 0.01);
             
-            // Core lightning color with optional glow
-            vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
-            #ifdef COLOR_SCHEME_GOLD_PURPLE
-                // Add golden glow for this scheme
+            // Core lightning color with random scheme
+            vec4 lightningCore = getLightningCoreColor(fragCoord.xy);
+            vec4 lightningEdge = getLightningEdgeColor(fragCoord.xy);
+            vec4 lightningColor = mix(lightningEdge, lightningCore, lightning);
+            
+            // Add golden glow if gold scheme is chosen
+            if (random(vec2(floor(iTime * 0.5), fragCoord.x * 0.1)) > 0.5) {
                 lightningColor.rgb += vec3(0.1, 0.08, 0.0) * lightning * 0.5;
-            #endif
+            }
             float lightningAlpha = lightning * (1.0 - progress) * 1.2;
             
             baseColor = mix(baseColor, lightningColor, lightningAlpha);
