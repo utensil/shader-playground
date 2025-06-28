@@ -136,14 +136,16 @@ float explosionEffect(vec2 p, vec2 center, float radius) {
     float dist = length(uv);
     float angle = atan(uv.y, uv.x);
     
-    // More intense core for small size
-    float core = pow(smoothstep(0.3, 0.0, dist), 0.3) * 4.0;
+    // Directionally varied core
+    float coreAngle = angle + iTime * 2.0;
+    float core = pow(smoothstep(0.4, 0.0, dist), 0.5) * 
+                (3.0 + 1.0 * sin(coreAngle * 5.0 + iTime * 10.0));
     
-    // Tighter shockwaves with higher frequency
-    float shockwave1 = smoothstep(0.1, 0.0, abs(dist - 0.15)) * 
-                      (0.9 + 0.5 * sin(angle * 12.0 + iTime * 50.0));
-    float shockwave2 = smoothstep(0.08, 0.0, abs(dist - 0.25)) * 
-                      (0.7 + 0.5 * cos(angle * 8.0 - iTime * 30.0));
+    // Asymmetric shockwaves
+    float shockwave1 = smoothstep(0.2, 0.0, abs(dist - 0.2)) * 
+                      (0.8 + 0.4 * sin(angle * 8.0 + iTime * 20.0));
+    float shockwave2 = smoothstep(0.15, 0.0, abs(dist - 0.3)) * 
+                      (0.7 + 0.5 * cos(angle * 6.0 - iTime * 15.0));
     
     // Combine with extreme contrast
     float explosion = max(core, max(shockwave1, shockwave2));
@@ -204,27 +206,44 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Tiny explosion (3x smaller)
-            float randSize = 0.033 + 0.033 * random(vec2(iTime, centerCP.x));
-            vec2 explosionPos = centerCP;
-            float explosion = explosionEffect(vu, explosionPos, randSize);
+            // Larger explosion (2x size) with directional randomness
+            float randSize = 0.1 + 0.1 * pow(random(vec2(iTime*2.0, centerCP.x)), 3.0);
             
-            // Calculate explosion UVs
+            // Position closer to right bottom of cursor with some jitter
+            vec2 explosionPos = centerCP + vec2(
+                currentCursorData.z * (0.4 + 0.1 * random(vec2(iTime, centerCP.x))),
+                -currentCursorData.w * (0.4 + 0.1 * random(vec2(iTime, centerCP.y)))
+            );
+            
+            // Multi-directional explosion effect
+            float explosion = 0.0;
+            for (int i = 0; i < 3; i++) {
+                vec2 dir = normalize(vec2(
+                    random(vec2(float(i), iTime)) - 0.5,
+                    random(vec2(float(i)*1.7, iTime+1.0)) - 0.5
+                ));
+                vec2 offsetPos = explosionPos + dir * randSize * 0.1;
+                explosion += explosionEffect(vu, offsetPos, randSize * (0.7 + 0.6*random(vec2(float(i), iTime))));
+            }
+            explosion = clamp(explosion, 0.0, 1.0);
+            
+            // Calculate explosion UVs with directional bias
             vec2 explosionUV = (vu - explosionPos) / randSize;
+            float angle = atan(explosionUV.y, explosionUV.x);
             
-            // High-contrast fire color with sparks
+            // High-contrast fire color with directional variation
             vec3 fireColor = mix(
                 vec3(1.0, 1.0, 0.3), // bright yellow
                 vec3(1.0, 0.1, 0.0), // intense red
-                pow(explosion, 0.7)
+                pow(explosion, 0.5 + 0.3*sin(angle*3.0 + iTime*5.0))
             );
             
-            // Add white hot sparks (more intense to compensate for smaller size)
-            float sparks = smoothstep(0.8, 1.0, explosion) * 
-                         (0.9 + 0.1 * sin(iTime * 200.0 + explosionUV.x * 200.0));
-            fireColor = mix(fireColor, vec3(1.0), sparks * 1.0);
+            // Add directional sparks
+            float sparks = smoothstep(0.7, 1.0, explosion) * 
+                         (0.8 + 0.2 * sin(iTime * 100.0 + angle * 20.0));
+            fireColor = mix(fireColor, vec3(1.0), sparks * 1.2);
             
-            float explosionAlpha = explosion * (1.0 - progress) * 3.0; // More intense
+            float explosionAlpha = explosion * (1.0 - progress) * 2.5;
             baseColor.rgb = max(baseColor.rgb, fireColor * explosionAlpha);
         }
     }
