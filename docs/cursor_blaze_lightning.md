@@ -3,16 +3,25 @@
 ## Requirements
 
 ### 1. Activation Condition
-- Triggered exclusively when:
-  - Cursor moves left-to-right on same line
-  - Movement indicates typing/copy-paste activity
-  - Horizontal delta > vertical delta
+- Uses existing cursor uniforms:
+  ```glsl
+  vec2 prev_pos = iCurrentCursor.xy;  // From existing uniform
+  vec2 curr_pos = iCurrentCursor.zw;  // From existing uniform
+  ```
+- Trigger when:
+  - Horizontal movement (curr_pos.x > prev_pos.x)
+  - Vertical change < 2 pixels (abs(curr_pos.y - prev_pos.y) < 2.0)
 
 ### 2. Origin Zone
-- Narrow top-screen region parameters:
-  - Base width = cursor horizontal distance traveled
-  - Constrained by ratio (0.2-0.4 recommended)
-  - Final width = min(base_width * ratio, max_screen_percentage)
+- Uses existing iResolution uniform:
+  ```glsl
+  float screen_width = iResolution.x;
+  float travel_dist = curr_pos.x - prev_pos.x;
+  float zone_width = min(travel_dist * 0.3, screen_width * 0.4);
+  ```
+- Top 10% of screen:
+  ```glsl
+  float zone_top = iResolution.y * 0.1;
 
 ### 3. Lightning Path Generation
 - Branch characteristics:
@@ -25,14 +34,13 @@
     - Horizontal position bias: 70% toward cursor
 
 ### 4. Color Profile
-- Core components:
-  - Main channel: HSB(45°, 90%, 100%)
-  - Edge effect: RGB(0.7, 0.2, 1.0) with distance falloff
-  - Color mixing:
-    ```glsl
-    float t = smoothstep(0.0, 0.2, distance_from_core);
-    vec3 final_color = mix(core_color, edge_color, t);
-    ```
+- Uses existing color blending:
+  ```glsl
+  vec3 core_color = vec3(1.0, 0.8, 0.2); // Gold-yellow
+  vec3 edge_color = vec3(0.7, 0.2, 1.0); // Purple
+  float fade = smoothstep(0.0, 0.2, distance_from_center);
+  vec3 final_color = mix(core_color, edge_color, fade);
+  ```
 
 ### 5. Implementation Strategy
 - Particle system requirements:
