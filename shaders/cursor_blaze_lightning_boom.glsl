@@ -23,14 +23,23 @@
 #define RAY_GREEN 1.0
 #define RAY_BLUE 0.3
 
-// Red/orange dominated explosion colors
-const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.3, 0.0, 1.0);   // Deep red core
-const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.4, 0.0, 1.0);   // Bright red
-const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);    // Intense red
-const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.25, 0.0, 1.0);   // Bright red
-const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.35, 0.05, 1.0); // Red-orange 
-const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.45, 0.1, 0.9);  // Orange
-const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.5, 0.15, 0.8);  // Orange (minimal yellow)
+// Inspired by nimitz's shader (https://www.shadertoy.com/view/lsSGzy)
+#define RAY_BRIGHTNESS 12.0
+#define RAY_GAMMA 5.0
+#define RAY_DENSITY 4.5
+#define RAY_CURVATURE 15.0
+#define RAY_RED 4.0
+#define RAY_GREEN 1.0
+#define RAY_BLUE 0.3
+
+// Explosion colors matching reference shader
+const vec4 EXPLOSION_CORE1_COLOR = vec4(RAY_RED, RAY_GREEN, RAY_BLUE, 1.0);
+const vec4 EXPLOSION_CORE2_COLOR = vec4(RAY_RED*0.8, RAY_GREEN*0.8, RAY_BLUE*0.8, 1.0);
+const vec4 EXPLOSION_HOT1_COLOR = vec4(RAY_RED*1.2, RAY_GREEN*0.5, RAY_BLUE*0.5, 1.0);
+const vec4 EXPLOSION_HOT2_COLOR = vec4(RAY_RED, RAY_GREEN*0.3, RAY_BLUE*0.3, 0.9);
+const vec4 EXPLOSION_MID1_COLOR = vec4(RAY_RED*0.8, RAY_GREEN*0.4, RAY_BLUE*0.4, 0.8);
+const vec4 EXPLOSION_MID2_COLOR = vec4(RAY_RED*0.6, RAY_GREEN*0.5, RAY_BLUE*0.5, 0.7);
+const vec4 EXPLOSION_COOL_COLOR = vec4(RAY_RED*0.4, RAY_GREEN*0.6, RAY_BLUE*0.6, 0.6);
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -134,19 +143,19 @@ float rayFbm(vec2 p) {
 float explosionRings(vec2 p, vec2 center, float radius) {
     float d = 0.0;
     
-    // Convert to pixel coordinates for consistent sizing
+    // Convert to reference shader's coordinate space
     vec2 uv = (p - center) * iResolution.y;
-    uv *= RAY_CURVATURE / radius;
+    uv *= RAY_CURVATURE * 0.1; // Adjusted curvature to match reference
     
-    float dist = length(uv);
-    float angle = atan(uv.y, uv.x);
-    
-    // Add ray-inspired flaring
-    float t = iTime * 0.33;
+    float t = -iTime * 0.33; // Negative time to match reference direction
+    float r = sqrt(dot(uv,uv));
     float x = dot(normalize(uv), vec2(0.5,0.0)) + t;
     float y = dot(normalize(uv), vec2(0.0,0.5)) + t;
+    
+    // Generate flaring effect from reference
     float rays = rayFbm(vec2(y * RAY_DENSITY, x * RAY_DENSITY));
-    rays = smoothstep(0.02-0.1, RAY_BRIGHTNESS+0.001, rays);
+    rays = smoothstep(RAY_GAMMA*0.02-0.1, RAY_BRIGHTNESS+0.001, rays);
+    rays = sqrt(rays);
     
     // Base shape with noise distortion
     float shapeNoise = 0.5 + 0.5*sin(angle*10.0 + iTime*5.0) * 
@@ -269,14 +278,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Larger explosion size (36-75 pixels) at random position near cursor
-            float randSize = 36.0 + 39.0 * random(vec2(iTime, centerCP.x));
-            vec2 randomOffset = vec2(
-                random(vec2(iTime, centerCP.y)) * 2.0 - 1.0,
-                random(vec2(iTime, centerCP.x)) * 2.0 - 1.0
-            ) * 0.3; // Random offset within 30% of screen
-            vec2 explosionPos = centerCP + randomOffset * (randSize / iResolution.y);
+            // Explosion effect matching reference shader style
+            float randSize = 50.0 + 50.0 * random(vec2(iTime, centerCP.x));
+            vec2 explosionPos = centerCP;
             float explosion = explosionRings(vu, explosionPos, randSize);
+            
+            // Apply reference shader's color inversion
+            vec3 col = rays * vec3(RAY_RED, RAY_GREEN, RAY_BLUE);
+            col = 1.0 - col;
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
