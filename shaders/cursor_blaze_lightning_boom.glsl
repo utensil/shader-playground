@@ -131,85 +131,20 @@ float rayFbm(vec2 p) {
     return rz;
 }
 
-// Particle structure simulation
-struct Particle {
-    vec2 position;
-    vec2 velocity;
-    float lifetime;
-    float size;
-    vec3 color;
-};
-
-// Generate explosion particles
-float explosionParticles(vec2 p, vec2 center, float radius, float time) {
-    float effect = 0.0;
-    const int NUM_PARTICLES = 32;
+float explosionEffect(vec2 p, vec2 center, float radius) {
+    float dist = distance(p, center) / radius;
     
-    for (int i = 0; i < NUM_PARTICLES; i++) {
-        // Microscopic, very short-lived particles
-        float seed = float(i) * 1.618;
-        vec2 dir = normalize(vec2(random(vec2(seed, 1.0)), random(vec2(seed, 2.0))) * 2.0 - 1.0);
-        float speed = 0.1 + random(vec2(seed, 3.0)) * 0.2; // Very slow particles
-        float lifetime = 0.1 + random(vec2(seed, 4.0)) * 0.15; // Very short lifetime
-        float size = 0.003 + random(vec2(seed, 5.0)) * 0.007; // Tiny particles
-        
-        // Particle physics
-        vec2 pos = center + dir * radius * (time * speed);
-        pos += dir * radius * (time * time * 0.5); // Acceleration
-        pos += vec2(random(vec2(seed, 6.0)) - 0.5, 
-                  random(vec2(seed, 7.0)) - 0.5) * radius * 0.1; // Jitter
-        
-        // Fade out over lifetime
-        float age = clamp(time / lifetime, 0.0, 1.0);
-        float fade = 1.0 - smoothstep(0.7, 1.0, age);
-        
-        // Particle rendering
-        float dist = distance(p, pos);
-        float particle = smoothstep(size, 0.0, dist) * fade;
-        
-        // Color based on particle age
-        vec3 color = mix(
-            vec3(1.0, 0.9, 0.3), // yellow
-            vec3(1.0, 0.3, 0.0), // orange-red
-            age
-        );
-        
-        effect += particle * (0.5 + 0.5 * random(vec2(seed, 8.0)));
-    }
+    // Simple core explosion
+    float core = smoothstep(0.5, 0.0, dist) * 2.0;
     
-    return clamp(effect, 0.0, 1.0);
-}
-
-float explosionRings(vec2 p, vec2 center, float radius) {
-    float time = mod(iTime*3.0, 1.0); // Faster looping
+    // Basic shockwave
+    float shockwave = smoothstep(0.3, 0.0, abs(dist - 0.3)) * 0.8;
     
-    // Directional distance with more chaos
-    vec2 offset = p - center;
-    float angle = atan(offset.y, offset.x) + sin(iTime*10.0) * 0.5;
-    float dist = length(offset) / radius;
+    // Combine effects with flicker
+    float explosion = max(core, shockwave) * (0.9 + 0.1 * sin(iTime * 50.0));
     
-    // Extreme directional bias with turbulence
-    vec2 noiseDir = normalize(hash2(vec2(floor(angle*8.0), time*15.0)) * 2.0 - 1.0);
-    float directionalBias = 0.3 + 0.7*pow(dot(normalize(offset), noiseDir), 3.0);
-    
-    float core = smoothstep(0.4, 0.0, dist) * 
-                (1.0 + 0.5*sin(iTime*60.0 + angle*12.0)) * 
-                (0.7 + 0.3*directionalBias) *
-                (0.8 + 0.4*random(vec2(floor(angle*8.0), time*12.0)));
-    
-    // Chaotic shockwaves
-    float shockwave = smoothstep(0.2, 0.0, abs(dist - (0.1 + 0.1*random(vec2(time, angle*5.0))))) * 
-                     (0.5 + 0.5*sin(iTime*30.0 + angle*20.0));
-    
-    // More intense but fewer particles
-    float particles = explosionParticles(p, center, radius, time) * 
-                    (0.3 + 0.2*random(vec2(floor(dist*20.0), time)));
-    
-    // Combine effects
-    float explosion = max(core, max(shockwave, particles));
-    
-    // Sharper fade out at edges
-    explosion *= smoothstep(0.6, 0.4, dist);
+    // Quick fade out
+    explosion *= smoothstep(0.8, 0.6, dist);
     
     return clamp(explosion, 0.0, 1.0);
 }
@@ -263,74 +198,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Half-sized explosion with extreme directional randomness
-            float randSize = 0.075 + 0.175 * pow(random(vec2(iTime*3.0, centerCP.x)), 6.0); // More extreme size variation
-            vec2 cursorRightBottom = centerCP + vec2(
-                currentCursorData.z * 0.25, 
-                currentCursorData.w * 0.25  // Positive Y for bottom on macOS
-            );
+            // Simple small explosion
+            float randSize = 0.1 + 0.1 * random(vec2(iTime, centerCP.x));
+            vec2 explosionPos = centerCP;
+            float explosion = explosionEffect(vu, explosionPos, randSize);
             
-            // Wild position jitter with directional chaos
-            vec2 explosionPos = cursorRightBottom;
-            vec2 jitterDir = normalize(hash2(vec2(iTime*0.5, centerCP.x*2.3)) * 4.0 - 2.0);
-            explosionPos += jitterDir * 0.075 * pow(random(vec2(iTime*1.5, centerCP.x)), 3.0);
-            
-            // Multi-directional explosion with more extreme angles
-            float explosion = 0.0;
-            for (int j = 0; j < 4; j++) {
-                vec2 dir = normalize(hash2(vec2(float(j)*2.71, iTime*0.7)) * 4.0 - 2.0);
-                vec2 offsetPos = explosionPos + dir * 0.01 * (1.0 + random(vec2(float(j), iTime*2.0)));
-                explosion += explosionRings(vu, offsetPos, randSize * (0.6 + 0.6*random(vec2(float(j)*3.0, iTime*1.5))));
-            }
-            explosion = clamp(explosion, 0.0, 1.0);
-            
-            // Create 6-10 micro booms with chaotic directions
-            int numBooms = 6 + int(random(vec2(iTime*3.7, centerCP.y)) * 5.0);
-            for (int i = 0; i < numBooms; i++) {
-                // Direction clusters with random spread
-                float cluster = floor(float(i)/2.0);
-                vec2 baseDir = normalize(hash2(vec2(cluster*0.79, iTime*0.7)) * 2.0 - 1.0);
-                float angle = atan(baseDir.y, baseDir.x) + (random(vec2(float(i), iTime)) - 0.5) * PI * 0.5;
-                
-                // Non-linear distance with directional bias
-                float distance = mix(0.01, 0.12, pow(random(vec2(float(i), iTime*3.0)), 4.0));
-                distance *= 1.0 + 0.5 * sin(iTime*5.0 + float(i)*2.0);
-                
-                // Position with turbulence
-                vec2 boomPos = explosionPos;
-                boomPos += vec2(cos(angle), sin(angle)) * randSize * distance;
-                boomPos += hash2(vec2(float(i)*3.7, iTime*1.3)) * 0.03;
-                
-                // Wildly varying boom sizes (0.1-1.0 pixels)
-                float boomSize = mix(0.1, 1.0, pow(random(vec2(float(i)*5.0, iTime*3.0)), 5.0));
-                
-                // Random color variation between yellow and red
-                float colorMix = random(vec2(float(i), centerCP.x));
-                vec4 boomColor = mix(
-                    mix(EXPLOSION_CORE2_COLOR, EXPLOSION_HOT1_COLOR, 0.5),
-                    mix(EXPLOSION_HOT2_COLOR, EXPLOSION_MID1_COLOR, 0.5),
-                    colorMix
-                );
-                
-                // Create the boom
-                float boom = explosionRings(vu, boomPos, boomSize);
-                
-                // Apply color with some randomness
-                float boomAlpha = boom * (1.0 - (progress * 0.5)) * 1.5;
-                baseColor = mix(baseColor, boomColor, boomAlpha);
-            }
-            
-            // Dynamic color based on explosion intensity
+            // Basic fire color
             vec3 fireColor = mix(
-                vec3(1.0, 0.9, 0.3), // yellow core
-                vec3(1.0, 0.2, 0.0), // red edges
-                smoothstep(0.3, 0.7, explosion)
+                vec3(1.0, 0.8, 0.1), // yellow
+                vec3(1.0, 0.3, 0.0), // orange-red
+                explosion
             );
             
-            // Add glowing embers
-            fireColor += vec3(0.8, 0.4, 0.1) * explosion * 0.5;
-            
-            float explosionAlpha = explosion * (1.0 - progress) * 2.0;
+            float explosionAlpha = explosion * (1.0 - progress);
             baseColor.rgb = mix(baseColor.rgb, fireColor, explosionAlpha);
         }
     }
