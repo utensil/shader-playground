@@ -151,9 +151,9 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     float angle = atan(uv.y, uv.x);
     float dist = length(uv);
     
-    // Limit maximum splash distance
-    float maxDist = radius * 1.5; // Hard limit on splash distance
-    dist = min(dist, maxDist);
+    // Strictly limit splash to a small area around cursor
+    float maxDist = radius * 0.5; // Much smaller splash radius
+    if (dist > maxDist) return 0.0; // Cut off completely beyond limit
     
     // Multi-frequency noise for variation within limits
     float noise1 = 0.5 + 0.5*sin(angle*12.0 + iTime*6.0 + dist*8.0);
@@ -167,10 +167,10 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     float warpedDist = pow(dist, 1.0 + 0.5*sin(iTime*2.0)) * shapeNoise;
     float baseShape = smoothstep(maxDist*0.8, maxDist*0.1, warpedDist);
     
-    // Shockwave layers constrained to max distance
-    float shockwave1 = 1.0 - smoothstep(0.0, maxDist*0.5, dist);
-    float shockwave2 = 1.0 - smoothstep(0.0, maxDist*0.8, dist*0.8);
-    float shockwave3 = 1.0 - smoothstep(0.0, maxDist*0.3, dist*1.2);
+    // Smaller shockwave layers
+    float shockwave1 = 1.0 - smoothstep(0.0, maxDist*0.3, dist);
+    float shockwave2 = 1.0 - smoothstep(0.0, maxDist*0.6, dist*0.8);
+    float shockwave3 = 1.0 - smoothstep(0.0, maxDist*0.2, dist*1.1);
     
     // Add chaotic turbulence
     float turbulence1 = sin(dist*30.0 - iTime*15.0) * 0.3;
@@ -253,8 +253,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Explosion with extreme size variance (100-400 pixels)
-            float randSize = 100.0 + 300.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
+            // Smaller explosion with less variance (50-150 pixels)
+            float randSize = 50.0 + 100.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
             vec2 cursorRightBottom = centerCP + vec2(
                 currentCursorData.z * 0.5, 
                 currentCursorData.w * 0.5  // Positive Y for bottom on macOS
