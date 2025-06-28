@@ -27,7 +27,37 @@ When the cursor moves left, an explosive effect is triggered:
 
 The effect uses:
 - Signed distance functions for shape rendering
-- Direction detection (left/right movement)
+- Direction detection (left/right movement) 
 - Color gradients and blending modes
 - Particle-like effects for debris/smoke
 - Time-based animation curves
+
+## Uniform Variable Guidelines
+
+**Important Rules for Uniform Usage:**
+1. Only use these pre-defined uniforms:
+   - `iResolution` (vec3) - Viewport resolution
+   - `iTime` (float) - Shader playback time
+   - `iCurrentCursor` (vec4) - Current cursor position/size (xy=position, zw=size)
+   - `iPreviousCursor` (vec4) - Previous cursor position/size  
+   - `iTimeCursorChange` (float) - Time when cursor last moved
+   - `iChannel0` (sampler2D) - Background texture
+
+2. Never declare new uniforms - only use the ones listed above
+
+3. Uniform naming conventions:
+   - Always use exact names (case-sensitive)
+   - Never modify or redefine uniforms
+   - Access existing uniforms directly (no UBOs/interface blocks)
+
+4. Coordinate handling:
+   - Normalize coordinates using `normalizeCoord()`
+   - Use `iResolution` for proper scaling
+   - Cursor positions are in pixels (use `iCurrentCursor.xy`/`iPreviousCursor.xy`)
+
+**Example Proper Usage:**
+```glsl
+vec2 pos = normalizeCoord(fragCoord, 1.0);
+float timeDelta = iTime - iTimeCursorChange; 
+vec4 bg = texture(iChannel0, fragCoord/iResolution.xy);
+```
