@@ -1,11 +1,10 @@
 // Standalone implementation of lightning and explosion cursor effects
-layout(std140, binding = 0) uniform UBO {
-    vec3 iResolution;
-    float iTime;
-    vec4 iCurrentCursor;
-    vec4 iPreviousCursor;
-    float iTimeCursorChange;
-    float DURATION;
+layout(std140, binding = 0) uniform Uniforms {
+    vec3 resolution;
+    float time;
+    vec4 currentCursor;
+    vec4 previousCursor;
+    float timeCursorChange;
 };
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
@@ -87,18 +86,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec4 baseColor = vec4(0.0);
     
     vec2 vu = normalize(fragCoord, 1.);
-    vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
-    vec4 previousCursor = vec4(normalize(iPreviousCursor.xy, 1.), normalize(iPreviousCursor.zw, 0.));
+    vec4 currentCursorData = vec4(normalize(currentCursor.xy, 1.), normalize(currentCursor.zw, 0.));
+    vec4 previousCursorData = vec4(normalize(previousCursor.xy, 1.), normalize(previousCursor.zw, 0.));
     
-    float progress = blend(clamp((iTime - iTimeCursorChange) / 0.1, 0.0, 1.0));
+    float progress = blend(clamp((time - timeCursorChange) / 0.1, 0.0, 1.0));
     
     if (progress < 1.0) {
-        vec2 centerCC = getRectangleCenter(currentCursor);
-        vec2 centerCP = getRectangleCenter(previousCursor);
+        vec2 centerCC = getRectangleCenter(currentCursorData);
+        vec2 centerCP = getRectangleCenter(previousCursorData);
         float lineLength = distance(centerCC, centerCP);
         
         // Lightning effect when moving right
-        if (currentCursor.x > previousCursor.x) {
+        if (currentCursorData.x > previousCursorData.x) {
             float lightning = lightningBranches(vu, centerCP, centerCC, 0.01);
             vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
             baseColor = mix(baseColor, lightningColor, lightning * (1.0 - progress));
