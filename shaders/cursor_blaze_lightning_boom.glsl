@@ -269,8 +269,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Large explosion size (144-297 pixels) with more red
-            float randSize = 144.0 + 153.0 * random(vec2(iTime, centerCP.x));
+            // Medium explosion size (48-99 pixels) with more red
+            float randSize = 48.0 + 51.0 * random(vec2(iTime, centerCP.x));
             float explosion = explosionRings(vu, centerCP, randSize);
             
             // Layered colors for different effects
