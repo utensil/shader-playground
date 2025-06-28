@@ -131,78 +131,76 @@ float rayFbm(vec2 p) {
     return rz;
 }
 
+// Particle structure simulation
+struct Particle {
+    vec2 position;
+    vec2 velocity;
+    float lifetime;
+    float size;
+    vec3 color;
+};
+
+// Generate explosion particles
+float explosionParticles(vec2 p, vec2 center, float radius, float time) {
+    float effect = 0.0;
+    const int NUM_PARTICLES = 32;
+    
+    for (int i = 0; i < NUM_PARTICLES; i++) {
+        // Initialize particle properties
+        float seed = float(i) * 1.618; // Golden ratio spacing
+        vec2 dir = normalize(vec2(random(vec2(seed, 1.0)), random(vec2(seed, 2.0))) * 2.0 - 1.0);
+        float speed = 0.5 + random(vec2(seed, 3.0)) * 1.5;
+        float lifetime = 0.5 + random(vec2(seed, 4.0)) * 0.5;
+        float size = 0.02 + random(vec2(seed, 5.0)) * 0.08;
+        
+        // Particle physics
+        vec2 pos = center + dir * radius * (time * speed);
+        pos += dir * radius * (time * time * 0.5); // Acceleration
+        pos += vec2(random(vec2(seed, 6.0)) - 0.5, 
+                  random(vec2(seed, 7.0)) - 0.5) * radius * 0.1; // Jitter
+        
+        // Fade out over lifetime
+        float age = clamp(time / lifetime, 0.0, 1.0);
+        float fade = 1.0 - smoothstep(0.7, 1.0, age);
+        
+        // Particle rendering
+        float dist = distance(p, pos);
+        float particle = smoothstep(size, 0.0, dist) * fade;
+        
+        // Color based on particle age
+        vec3 color = mix(
+            vec3(1.0, 0.9, 0.3), // yellow
+            vec3(1.0, 0.3, 0.0), // orange-red
+            age
+        );
+        
+        effect += particle * (0.5 + 0.5 * random(vec2(seed, 8.0)));
+    }
+    
+    return clamp(effect, 0.0, 1.0);
+}
+
 float explosionRings(vec2 p, vec2 center, float radius) {
-    float d = 0.0;
+    float time = mod(iTime, 1.0); // Loop every second
     
-    // Convert to reference shader's coordinate space
-    vec2 uv = (p - center) * iResolution.y;
-    uv *= RAY_CURVATURE * 0.1; // Adjusted curvature to match reference
+    // Core explosion
+    float dist = distance(p, center) / radius;
+    float core = smoothstep(1.0, 0.0, dist) * 2.0;
+    core *= (0.8 + 0.2 * sin(iTime * 50.0)); // Flicker
     
-    float t = -iTime * 0.33; // Negative time to match reference direction
-    float r = sqrt(dot(uv,uv));
-    float x = dot(normalize(uv), vec2(0.5,0.0)) + t;
-    float y = dot(normalize(uv), vec2(0.0,0.5)) + t;
+    // Shockwave
+    float shockwave = smoothstep(0.3, 0.0, abs(dist - 0.7 + time * 0.5)) * 0.8;
     
-    // Generate flaring effect from reference
-    float rays = rayFbm(vec2(y * RAY_DENSITY, x * RAY_DENSITY));
-    rays = smoothstep(RAY_GAMMA*0.02-0.1, RAY_BRIGHTNESS+0.001, rays);
-    rays = sqrt(rays);
+    // Particles
+    float particles = explosionParticles(p, center, radius, time);
     
-    // Limited but extreme splash variation
-    float angle = atan(uv.y, uv.x);
-    float dist = length(uv);
+    // Combine effects
+    float explosion = max(core, max(shockwave, particles * 0.7));
     
-    // Larger splash area for bigger explosion
-    float maxDist = radius * 1.0; // Full splash radius
-    if (dist > maxDist) return 0.0; // Cut off completely beyond limit
+    // Fade out edges
+    explosion *= smoothstep(1.2, 0.8, dist);
     
-    // Multi-frequency noise for variation within limits
-    float noise1 = 0.5 + 0.5*sin(angle*12.0 + iTime*6.0 + dist*8.0);
-    float noise2 = 0.5 + 0.5*sin(angle*5.0 + iTime*3.0 + dist*20.0);
-    
-    // Combine noises with distance-based weighting
-    float shapeNoise = mix(noise1, noise2, smoothstep(0.0, maxDist, dist)) * 1.5;
-    shapeNoise = clamp(shapeNoise, 0.5, 1.5); // Keep variations within bounds
-    
-    // Apply non-linear scaling with distance falloff
-    float warpedDist = pow(dist, 1.0 + 0.5*sin(iTime*2.0)) * shapeNoise;
-    float baseShape = smoothstep(maxDist*0.8, maxDist*0.1, warpedDist);
-    
-    // Smaller shockwave layers
-    float shockwave1 = 1.0 - smoothstep(0.0, maxDist*0.3, dist);
-    float shockwave2 = 1.0 - smoothstep(0.0, maxDist*0.6, dist*0.8);
-    float shockwave3 = 1.0 - smoothstep(0.0, maxDist*0.2, dist*1.1);
-    
-    // Add chaotic turbulence
-    float turbulence1 = sin(dist*30.0 - iTime*15.0) * 0.3;
-    float turbulence2 = cos(angle*15.0 + iTime*8.0 + dist*10.0) * 0.25;
-    float turbulence3 = sin(angle*5.0 - iTime*20.0) * 0.2;
-    
-    // Combine shockwaves with turbulence
-    float shockwave = max(shockwave1, shockwave2*0.7);
-    shockwave = max(shockwave, shockwave3*0.5);
-    shockwave = smoothstep(0.1, 0.9, shockwave + turbulence1 + turbulence2 + turbulence3);
-    
-    // More intense and random core flash
-    float flicker = 0.6 + 0.4*sin(iTime*50.0 + dist*15.0 + random(vec2(angle, iTime)));
-    float core = smoothstep(radius*0.15, 0.0, dist) * 5.0 * flicker;
-    d += core * (1.0 + 0.7*sin(angle*15.0 + iTime*10.0));
-    
-    // Asymmetric explosion lobes with directional bias
-    float lobe1 = smoothstep(radius*0.5, radius*0.2, 
-                           dist*(0.7 + 0.3*sin(iTime*5.0 + angle*3.0))) * 
-                  (0.8 + 0.2*sin(angle*4.0 + iTime*2.0));
-    float lobe2 = smoothstep(radius*0.6, radius*0.25, 
-                           dist*(0.6 + 0.4*cos(iTime*3.0 + angle*5.0))) * 
-                  (0.7 + 0.3*cos(angle*6.0 - iTime*1.5));
-    float lobe3 = smoothstep(radius*0.8, radius*0.4, 
-                           dist*(0.9 + 0.1*sin(iTime*7.0 + angle*7.0))) * 
-                  (0.6 + 0.4*sin(angle*2.0 + iTime*3.0));
-    
-    // Combine lobes with ray effect
-    d += max(lobe1, max(lobe2*0.8, lobe3*0.6)) + rays*0.5;
-    
-    return clamp(d * shockwave, 0.0, 1.0);
+    return clamp(explosion, 0.0, 1.0);
 }
 
 vec2 normalizeCoord(vec2 value, float isPosition) {
@@ -290,42 +288,21 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 baseColor = mix(baseColor, boomColor, boomAlpha);
             }
             
-            // Apply reference shader's color inversion
-            vec3 col = vec3(RAY_RED, RAY_GREEN, RAY_BLUE);
-            col = 1.0 - col;
+            // Realistic explosion with particles
+            float explosion = explosionRings(vu, cursorRightBottom, randSize);
             
-            // Layered colors for different effects
-            float coreMask = smoothstep(0.7, 1.0, explosion);
-            float ringMask = smoothstep(0.3, 0.7, explosion);
-            float debrisMask = smoothstep(0.1, 0.4, explosion);
-            
-            // More vibrant and random color blending
-            float colorRand = random(vec2(iTime, centerCP.x));
-            vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 4.0;
-            
-            // Chaotic red/orange mixing with more randomness
-            float mixFactor1 = random(vec2(colorRand, iTime*0.1));
-            float mixFactor2 = random(vec2(colorRand*1.3, iTime*0.2));
-            
-            explosionColor = mix(
-                mix(EXPLOSION_CORE2_COLOR, EXPLOSION_HOT1_COLOR, mixFactor1),
-                mix(EXPLOSION_HOT2_COLOR, EXPLOSION_MID1_COLOR, mixFactor2),
-                ringMask*3.0
+            // Dynamic color based on explosion intensity
+            vec3 fireColor = mix(
+                vec3(1.0, 0.9, 0.3), // yellow core
+                vec3(1.0, 0.2, 0.0), // red edges
+                smoothstep(0.3, 0.7, explosion)
             );
             
-            // Add some orange highlights
-            if (random(vec2(colorRand, iTime*0.3)) > 0.3) {
-                explosionColor = mix(explosionColor, EXPLOSION_MID2_COLOR, ringMask*1.5);
-            }
+            // Add glowing embers
+            fireColor += vec3(0.8, 0.4, 0.1) * explosion * 0.5;
             
-            // Add random color accents
-            if (colorRand > 0.7) {
-                explosionColor.r += 0.3 * ringMask;
-            }
-            
-            // Longer duration (0.2s instead of 0.1s) and brighter colors
-            float explosionAlpha = explosion * (1.0 - (progress * 0.5)) * 2.0;
-            baseColor = mix(baseColor, explosionColor, explosionAlpha);
+            float explosionAlpha = explosion * (1.0 - progress) * 2.0;
+            baseColor.rgb = mix(baseColor.rgb, fireColor, explosionAlpha);
         }
     }
     
