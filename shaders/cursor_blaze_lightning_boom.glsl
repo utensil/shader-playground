@@ -181,17 +181,25 @@ float explosionParticles(vec2 p, vec2 center, float radius, float time) {
 }
 
 float explosionRings(vec2 p, vec2 center, float radius) {
-    float time = mod(iTime, 1.0); // Loop every second
+    float time = mod(iTime*1.5, 1.0); // Faster looping
     
-    // Core explosion - extremely tight
-    float dist = distance(p, center) / radius;
-    float core = smoothstep(0.3, 0.0, dist) * 1.0; // Tiny, subtle core
+    // More chaotic distance calculation
+    vec2 offset = p - center;
+    float angle = atan(offset.y, offset.x);
+    float dist = length(offset) / radius;
     
-    // Minimal shockwave
-    float shockwave = smoothstep(0.1, 0.0, abs(dist - 0.15 + time * 0.1)) * 0.3;
+    // Splash-like core with turbulence
+    float core = smoothstep(0.4, 0.0, dist) * 
+                (1.0 + 0.5*sin(iTime*50.0 + angle*10.0)) * 
+                (0.8 + 0.2*random(vec2(floor(angle*10.0), time*10.0)));
     
-    // Very few subtle particles
-    float particles = explosionParticles(p, center, radius, time) * 0.2;
+    // Chaotic shockwaves
+    float shockwave = smoothstep(0.2, 0.0, abs(dist - (0.1 + 0.1*random(vec2(time, angle*5.0))))) * 
+                     (0.5 + 0.5*sin(iTime*30.0 + angle*20.0));
+    
+    // More intense but fewer particles
+    float particles = explosionParticles(p, center, radius, time) * 
+                    (0.3 + 0.2*random(vec2(floor(dist*20.0), time)));
     
     // Combine effects
     float explosion = max(core, max(shockwave, particles));
@@ -251,25 +259,37 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Extremely small explosion (20x smaller)
-            float randSize = 0.5 + 1.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
+            // Ultra-tiny explosion with extreme randomness
+            float randSize = 0.15 + 0.35 * pow(random(vec2(iTime*2.0, centerCP.x)), 4.0); // More extreme size variation
             vec2 cursorRightBottom = centerCP + vec2(
                 currentCursorData.z * 0.5, 
                 currentCursorData.w * 0.5  // Positive Y for bottom on macOS
             );
-            vec2 explosionPos = cursorRightBottom;
+            
+            // Add position jitter for splash effect
+            vec2 explosionPos = cursorRightBottom + vec2(
+                (random(vec2(iTime, centerCP.x)) - 0.5) * 0.1,
+                (random(vec2(iTime, centerCP.y)) - 0.5) * 0.1
+            );
+            
             float explosion = explosionRings(vu, explosionPos, randSize);
             
-            // Create 2-3 tiny booms extremely close to cursor
-            int numBooms = 2 + int(random(vec2(iTime, centerCP.y)) * 2.0);
+            // Create 3-5 micro booms with wild randomness
+            int numBooms = 3 + int(random(vec2(iTime*1.5, centerCP.y)) * 3.0);
             for (int i = 0; i < numBooms; i++) {
-                // Random direction and extremely small distance from cursor
-                float angle = random(vec2(float(i), centerCP.x)) * 2.0 * PI;
-                float distance = 0.05 + 0.1 * random(vec2(float(i), centerCP.y));
-                vec2 boomPos = explosionPos + vec2(cos(angle), sin(angle)) * randSize * distance;
+                // Extreme random directions and distances
+                float angle = random(vec2(float(i)*10.0, iTime*0.5)) * 2.0 * PI;
+                float distance = mix(0.02, 0.15, pow(random(vec2(float(i), iTime*2.0)), 3.0)); // Non-linear distribution
                 
-                // Microscopic boom sizes (0.5-2 pixels)
-                float boomSize = 0.5 + 1.5 * random(vec2(float(i), iTime));
+                // Add secondary jitter to boom positions
+                vec2 boomPos = explosionPos + vec2(cos(angle), sin(angle)) * randSize * distance;
+                boomPos += vec2(
+                    (random(vec2(float(i), iTime)) - 0.5) * 0.05,
+                    (random(vec2(float(i), iTime+1.0)) - 0.5) * 0.05
+                );
+                
+                // Wildly varying boom sizes (0.1-1.0 pixels)
+                float boomSize = mix(0.1, 1.0, pow(random(vec2(float(i)*5.0, iTime*3.0)), 5.0));
                 
                 // Random color variation between yellow and red
                 float colorMix = random(vec2(float(i), centerCP.x));
