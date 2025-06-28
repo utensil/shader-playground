@@ -206,27 +206,23 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
     }
     
-    // Add lightning activation debug to trail
+    // Visual indicator when lightning is active (purple tint)
     if (should_lightning) {
-        newColor = mix(newColor, vec4(1.0, 0.0, 0.0, 1.0), 0.3); // Red tint when active
+        vec4 lightning_tint = vec4(0.7, 0.2, 1.0, 1.0); // Purple color
+        float tint_strength = smoothstep(0.0, 0.5, progress);
+        newColor = mix(newColor, lightning_tint, tint_strength * 0.5); // 50% purple blend
     }
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
-    // Debug lightning visualization
+    // Lightning activation flash
     if (should_lightning) {
-        vec2 target = curr_pos;
-        // Convert to normalized device coordinates
-        vec2 screen_origin = origin * iResolution.xy;
-        vec2 screen_target = target * iResolution.xy;
-        float branch = drawLightningBranch(fragCoord, screen_origin, screen_target, LIGHTNING_WIDTH * iResolution.y);
-        // Debug colors - make lightning very obvious
-        vec3 lightning_color = vec3(1.0, 0.0, 0.0); // Pure red for testing
-        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 1.0);
+        // Add a quick white flash when lightning first activates
+        float flash = smoothstep(0.0, 0.05, iTime - iTimeCursorChange);
+        newColor.rgb = mix(newColor.rgb, vec3(1.0), flash * 0.3);
         
-        // Debug output to console
-        // (Remove this after testing)
-        if (fragCoord.x < 10.0 && fragCoord.y < 10.0) {
-            newColor.rgb = vec3(should_lightning ? 1.0 : 0.0); // Top-left corner shows activation
+        // Visual indicator in top-right corner
+        if (fragCoord.x > iResolution.x - 20.0 && fragCoord.y < 20.0) {
+            newColor.rgb = mix(newColor.rgb, vec3(0.7, 0.2, 1.0), 0.8);
         }
     }
     
