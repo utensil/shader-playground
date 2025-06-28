@@ -325,7 +325,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     // Lightning activation check
     float delta_x = curr_pos.x - prev_pos.x;
     float delta_y = abs(curr_pos.y - prev_pos.y);
-    bool should_lightning = delta_x > 5.0 && delta_y < 10.0;
+    bool should_lightning = true; // delta_x > 0.0; //5.0 && delta_y < 10.0;
 
     if (progress < 1.0) {
         vec2 trailAxis = v3 - v0;
