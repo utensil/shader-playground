@@ -1,3 +1,5 @@
+// Classic Perlin noise helper functions
+
 /* ORIGINAL WORKING IMPLEMENTATION
 // Cursor Blaze Lightning Effect Implementation
 
@@ -101,8 +103,6 @@ float determineStartVertexFactor(vec2 a, vec2 b) {
 vec2 getRectangleCenter(vec4 rectangle) {
     return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
 }
-
-// Classic Perlin noise helper functions
 
 // Classic Perlin noise implementations
 float cnoise(vec2 P) {
