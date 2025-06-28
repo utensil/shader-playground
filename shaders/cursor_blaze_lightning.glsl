@@ -245,7 +245,7 @@ float drawLightningBranch(vec2 p, vec2 a, vec2 b, float width, float time) {
     vec2 normal = vec2(-dir.y, dir.x);
     
     // Add Perlin noise trembling (using 2D noise)
-    float noise = cnoise(p * NOISE_FREQ + vec2(time * 10.0, 0.0)) * 0.02;
+    float noise = cnoise(p * NOISE_FREQ + vec2(iTime * 10.0, 0.0)) * 0.02;
     
     // Calculate distance with noise offset
     float d = dot(p - a + noise, normal);
@@ -257,7 +257,7 @@ float fbm(vec2 p) {
     float amp = 0.5;
     float noise = 0.0;
     for(int i=0; i<3; i++) {
-        noise += amp * cnoise(p * exp2(float(i)) + vec2(time * 10.0, 0.0));
+        noise += amp * cnoise(p * exp2(float(i)) + vec2(iTime * 10.0, 0.0));
         amp *= 0.5;
     }
     return noise;
