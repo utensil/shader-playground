@@ -239,21 +239,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         
         // Lightning effect when moving right
         if (currentCursorData.x > previousCursorData.x) {
-            // Lightning strikes from top of screen (y = -1.0 in normalized coords for macOS)
-            vec2 lightningStart = vec2(centerCC.x, -1.0);
+            // Lightning strikes from top of screen (y = 1.0 in normalized coords)
+            vec2 lightningStart = vec2(centerCC.x, 1.0);
             float lightning = lightningBranches(vu, lightningStart, centerCC, 0.01);
             
-            // Add blue glow effect inspired by reference
-            vec3 glow = vec3(0.3,0.5,1.0) * (1.0-(hash(vu+iTime*0.1)))*0.5;
-            
+            // Core lightning color without glow effects
             vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
-            lightningColor.rgb += glow;
-            float lightningAlpha = lightning * (1.0 - progress) * 1.2; // Increased intensity
-            
-            // Add subtle storm background effect
-            vec2 stormCoord = (5.0*vu+0.2)*abs(vu.y)+0.7*iTime;
-            float storm = hash(stormCoord)*0.3;
-            baseColor.rgb += storm * vec3(0.4,0.5,1.0);
+            float lightningAlpha = lightning * (1.0 - progress) * 1.2;
             
             baseColor = mix(baseColor, lightningColor, lightningAlpha);
         }
