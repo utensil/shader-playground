@@ -268,11 +268,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             for (int i = 0; i < numBooms; i++) {
                 // Random direction and distance from main explosion
                 float angle = random(vec2(float(i), centerCP.x)) * 2.0 * PI;
-                float distance = 0.3 + 0.4 * random(vec2(float(i), centerCP.y));
+                float distance = 0.6 + 0.6 * random(vec2(float(i), centerCP.y));
                 vec2 boomPos = explosionPos + vec2(cos(angle), sin(angle)) * randSize * distance;
                 
-                // Random size (20-60 pixels)
-                float boomSize = 20.0 + 40.0 * random(vec2(float(i), iTime));
+                // Debug size - 3x larger (60-180 pixels)
+                float boomSize = 60.0 + 120.0 * random(vec2(float(i), iTime));
                 
                 // Random color variation between yellow and red
                 float colorMix = random(vec2(float(i), centerCP.x));
