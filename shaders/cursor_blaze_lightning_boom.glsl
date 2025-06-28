@@ -193,7 +193,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         
         // Lightning effect when moving right
         if (currentCursorData.x > previousCursorData.x) {
-            float lightning = lightningBranches(vu, centerCP, centerCC, 0.01);
+            // Lightning strikes from top of screen (y = 1.0 in normalized coords)
+            vec2 lightningStart = vec2(centerCC.x, 1.0); 
+            float lightning = lightningBranches(vu, lightningStart, centerCC, 0.01);
             vec4 lightningColor = mix(LIGHTNING_EDGE_COLOR, LIGHTNING_CORE_COLOR, lightning);
             float lightningAlpha = lightning * (1.0 - progress) * 0.7; // Reduced intensity
             baseColor = mix(baseColor, lightningColor, lightningAlpha);
