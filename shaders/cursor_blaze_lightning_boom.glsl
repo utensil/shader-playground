@@ -37,9 +37,9 @@ float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
     // Add branches
     float branchCount = 5.0;
     for(float i = 0.0; i < branchCount; i++) {
-        float t = random(vec2(i, iTime)) * 0.5 + 0.3;
+        float t = random(vec2(i, time)) * 0.5 + 0.3;
         vec2 branchStart = mix(start, end, t);
-        vec2 branchEnd = branchStart + perp * (random(vec2(i+1.0, iTime)) * 0.2 - 0.1) * length(end - start);
+        vec2 branchEnd = branchStart + perp * (random(vec2(i+1.0, time)) * 0.2 - 0.1) * length(end - start);
         d += smoothstep(width*0.5, 0.0, distanceToLine(p, branchStart, branchEnd)) * 0.5;
     }
     
@@ -61,15 +61,15 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     // Debris effect
     for(int i = 0; i < 10; i++) {
         vec2 dir = vec2(sin(float(i)*123.456), cos(float(i)*321.654));
-        vec2 debrisPos = center + dir * radius * (0.5 + 0.5*sin(iTime*5.0 + float(i)));
+        vec2 debrisPos = center + dir * radius * (0.5 + 0.5*sin(time*5.0 + float(i)));
         d += smoothstep(radius*0.05, 0.0, distance(p, debrisPos)) * 0.3;
     }
     
     return clamp(d, 0.0, 1.0);
 }
 
-vec2 normalize(vec2 value, float isPosition) {
-    return (value * 2.0 - (iResolution.xy * isPosition)) / iResolution.y;
+vec2 normalizeCoord(vec2 value, float isPosition) {
+    return (value * 2.0 - (resolution.xy * isPosition)) / resolution.y;
 }
 
 vec2 getRectangleCenter(vec4 rectangle) {
@@ -82,12 +82,12 @@ float blend(float t) {
 }
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    // Start with a transparent background
-    vec4 baseColor = vec4(0.0);
+    // Start with background texture
+    vec4 baseColor = texture(iChannel0, fragCoord.xy / resolution.xy);
     
-    vec2 vu = normalize(fragCoord, 1.);
-    vec4 currentCursorData = vec4(normalize(currentCursor.xy, 1.), normalize(currentCursor.zw, 0.));
-    vec4 previousCursorData = vec4(normalize(previousCursor.xy, 1.), normalize(previousCursor.zw, 0.));
+    vec2 vu = normalizeCoord(fragCoord, 1.);
+    vec4 currentCursorData = vec4(normalizeCoord(currentCursor.xy, 1.), normalizeCoord(currentCursor.zw, 0.));
+    vec4 previousCursorData = vec4(normalizeCoord(previousCursor.xy, 1.), normalizeCoord(previousCursor.zw, 0.));
     
     float progress = blend(clamp((time - timeCursorChange) / 0.1, 0.0, 1.0));
     
