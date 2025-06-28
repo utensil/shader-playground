@@ -1,9 +1,12 @@
 // Standalone implementation of lightning and explosion cursor effects
-uniform vec3 iResolution;
-uniform float iTime;
-uniform vec4 iCurrentCursor;
-uniform vec4 iPreviousCursor;
-uniform float iTimeCursorChange;
+layout(std140, binding = 0) uniform UBO {
+    vec3 iResolution;
+    float iTime;
+    vec4 iCurrentCursor;
+    vec4 iPreviousCursor;
+    float iTimeCursorChange;
+    float DURATION;
+};
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
@@ -87,7 +90,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
     vec4 previousCursor = vec4(normalize(iPreviousCursor.xy, 1.), normalize(iPreviousCursor.zw, 0.));
     
-    float progress = blend(clamp((iTime - iTimeCursorChange) / DURATION, 0.0, 1.0));
+    float progress = blend(clamp((iTime - iTimeCursorChange) / 0.1, 0.0, 1.0));
     
     if (progress < 1.0) {
         vec2 centerCC = getRectangleCenter(currentCursor);
