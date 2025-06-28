@@ -125,9 +125,9 @@ const float SPARSE_LEVEL = 0.3;
 */
 
 // Lightning effect parameters
-const float LIGHTNING_WIDTH = 0.02;
-const vec3 CORE_COLOR = vec3(1.0, 0.8, 0.2);
-const vec3 EDGE_COLOR = vec3(0.7, 0.2, 1.0);
+const float LIGHTNING_WIDTH = 0.05;  // Increased width
+const vec3 CORE_COLOR = vec3(1.0, 0.9, 0.3);  // Brighter gold
+const vec3 EDGE_COLOR = vec3(0.8, 0.3, 1.0);  // More vibrant purple
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
@@ -214,7 +214,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         float branch = drawLightningBranch(fragCoord, origin, target, LIGHTNING_WIDTH);
         float fade = smoothstep(0.0, 0.3, distance(fragCoord, 0.5*(origin+target)));
         vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, fade);
-        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 0.7);
+        // Add glow
+        float glow = smoothstep(0.1, 0.0, distance(fragCoord, 0.5*(origin+target)));
+        lightning_color += glow * 0.3 * CORE_COLOR;
+        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 1.0);  // Full opacity
     }
     
     fragColor = mix(newColor, fragColor, step(sdfCursor, 0.));
