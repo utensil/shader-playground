@@ -147,19 +147,37 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     rays = smoothstep(RAY_GAMMA*0.02-0.1, RAY_BRIGHTNESS+0.001, rays);
     rays = sqrt(rays);
     
-    // Base shape with noise distortion
+    // Extreme distance variation with multiple noise layers
     float angle = atan(uv.y, uv.x);
     float dist = length(uv);
-    float shapeNoise = 0.5 + 0.5*sin(angle*10.0 + iTime*5.0) * 
-                      (0.5 + 0.5*sin(dist*15.0 + iTime*3.0));
-    float baseShape = smoothstep(radius*0.9, radius*0.1, dist * shapeNoise);
     
-    // Shockwave with organic turbulence
-    float shockwave = 1.0 - smoothstep(0.0, radius*0.9, dist);
-    float turbulence = (sin(dist*25.0 - iTime*12.0) * 0.2 + 
-                       sin(angle*8.0 + iTime*4.0) * 0.15) * 
-                      smoothstep(radius, 0.0, dist);
-    shockwave = smoothstep(0.2, 0.8, shockwave + turbulence);
+    // Multi-frequency noise for extreme variation
+    float noise1 = 0.5 + 0.5*sin(angle*12.0 + iTime*6.0 + dist*8.0);
+    float noise2 = 0.5 + 0.5*sin(angle*5.0 + iTime*3.0 + dist*20.0);
+    float noise3 = 0.5 + 0.5*sin(angle*20.0 + iTime*10.0 + dist*3.0);
+    
+    // Combine noises with different weights
+    float shapeNoise = mix(noise1, noise2, 0.7) * noise3 * 2.0;
+    shapeNoise = clamp(shapeNoise, 0.2, 1.8); // Allow extreme values
+    
+    // Apply non-linear scaling to the distance
+    float warpedDist = pow(dist, 1.0 + 0.8*sin(iTime*2.0)) * shapeNoise;
+    float baseShape = smoothstep(radius*0.9, radius*0.1, warpedDist);
+    
+    // Extreme shockwave with multiple layers
+    float shockwave1 = 1.0 - smoothstep(0.0, radius*0.7, dist);
+    float shockwave2 = 1.0 - smoothstep(0.0, radius*1.2, dist*0.8);
+    float shockwave3 = 1.0 - smoothstep(0.0, radius*0.5, dist*1.5);
+    
+    // Add chaotic turbulence
+    float turbulence1 = sin(dist*30.0 - iTime*15.0) * 0.3;
+    float turbulence2 = cos(angle*15.0 + iTime*8.0 + dist*10.0) * 0.25;
+    float turbulence3 = sin(angle*5.0 - iTime*20.0) * 0.2;
+    
+    // Combine shockwaves with turbulence
+    float shockwave = max(shockwave1, shockwave2*0.7);
+    shockwave = max(shockwave, shockwave3*0.5);
+    shockwave = smoothstep(0.1, 0.9, shockwave + turbulence1 + turbulence2 + turbulence3);
     
     // More intense and random core flash
     float flicker = 0.6 + 0.4*sin(iTime*50.0 + dist*15.0 + random(vec2(angle, iTime)));
