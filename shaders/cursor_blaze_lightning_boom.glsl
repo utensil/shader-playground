@@ -151,6 +151,7 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     
     // Base shape with noise distortion
     float angle = atan(uv.y, uv.x);
+    float dist = length(uv);
     float shapeNoise = 0.5 + 0.5*sin(angle*10.0 + iTime*5.0) * 
                       (0.5 + 0.5*sin(dist*15.0 + iTime*3.0));
     float baseShape = smoothstep(radius*0.9, radius*0.1, dist * shapeNoise);
