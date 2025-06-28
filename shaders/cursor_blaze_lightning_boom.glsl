@@ -24,14 +24,14 @@
 #define RAY_GREEN 1.0
 #define RAY_BLUE 0.3
 
-// Explosion colors matching reference shader
-const vec4 EXPLOSION_CORE1_COLOR = vec4(RAY_RED, RAY_GREEN, RAY_BLUE, 1.0);
-const vec4 EXPLOSION_CORE2_COLOR = vec4(RAY_RED*0.8, RAY_GREEN*0.8, RAY_BLUE*0.8, 1.0);
-const vec4 EXPLOSION_HOT1_COLOR = vec4(RAY_RED*1.2, RAY_GREEN*0.5, RAY_BLUE*0.5, 1.0);
-const vec4 EXPLOSION_HOT2_COLOR = vec4(RAY_RED, RAY_GREEN*0.3, RAY_BLUE*0.3, 0.9);
-const vec4 EXPLOSION_MID1_COLOR = vec4(RAY_RED*0.8, RAY_GREEN*0.4, RAY_BLUE*0.4, 0.8);
-const vec4 EXPLOSION_MID2_COLOR = vec4(RAY_RED*0.6, RAY_GREEN*0.5, RAY_BLUE*0.5, 0.7);
-const vec4 EXPLOSION_COOL_COLOR = vec4(RAY_RED*0.4, RAY_GREEN*0.6, RAY_BLUE*0.6, 0.6);
+// More intense red explosion colors
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.1, 0.0, 1.0);    // Intense red core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.2, 0.0, 1.0);    // Bright red
+const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.1, 0.0, 1.0);     // Deep red
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.15, 0.0, 0.9);     // Red
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.2, 0.0, 0.8);      // Red-orange
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.25, 0.0, 0.7);      // Orange-red
+const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.3, 0.0, 0.6);       // Orange
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -272,8 +272,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Explosion effect matching reference shader style
-            float randSize = 50.0 + 50.0 * random(vec2(iTime, centerCP.x));
+            // Larger and more red explosion
+            float randSize = 100.0 + 100.0 * random(vec2(iTime, centerCP.x)); // Doubled size
             vec2 explosionPos = centerCP;
             float explosion = explosionRings(vu, explosionPos, randSize);
             
