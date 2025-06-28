@@ -122,8 +122,8 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     // Combine lobes with ray effect
     d += max(lobe1, max(lobe2*0.8, lobe3*0.6)) + rays*0.5;
     
-    // Debris with directional clusters
-    for(int i = 0; i < 20; i++) {
+    // Debris with more randomness
+    for(int i = 0; i < 30; i++) {  // Increased debris count
         // Create clustered ejection patterns
         float cluster = floor(float(i)/5.0);
         float rnd1 = random(vec2(float(i), iTime*0.3 + cluster));
@@ -142,8 +142,8 @@ float explosionRings(vec2 p, vec2 center, float radius) {
         float t = mod(iTime*(0.5 + rnd2), 1.0);
         vec2 debrisPos = center + dir * radius * (t * speed + t*t * 0.5);
         
-        // Varying particle sizes
-        float size = mix(0.02, 0.08, rnd1) * radius;
+        // More varied particle sizes
+        float size = mix(0.01, 0.15, rnd1) * radius; // Wider size range
         d += smoothstep(size, 0.0, distance(p, debrisPos)) * 0.4;
     }
     
@@ -200,8 +200,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         } 
         // Explosion effect when moving left
         else {
-            // 10x larger explosion radius
-            float explosion = explosionRings(vu, centerCP, lineLength * 7.0); 
+            // Random explosion size between 0.3-0.7 of screen height
+            float randSize = 0.3 + 0.4 * random(vec2(iTime, centerCP.x));
+            float explosion = explosionRings(vu, centerCP, iResolution.y * randSize);
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
