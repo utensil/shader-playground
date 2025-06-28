@@ -1,5 +1,9 @@
-// Based on cursor_blaze_lightning.glsl with enhanced lightning and explosion effects
-#include "cursor_blaze_lightning.glsl"
+// Standalone implementation of lightning and explosion cursor effects
+uniform vec3 iResolution;
+uniform float iTime;
+uniform vec4 iCurrentCursor;
+uniform vec4 iPreviousCursor;
+uniform float iTimeCursorChange;
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
@@ -10,6 +14,13 @@ const vec4 EXPLOSION_RING3_COLOR = vec4(0.8, 0.9, 0.3, 0.4);
 
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+}
+
+float distanceToLine(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a;
+    vec2 ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h);
 }
 
 float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
@@ -55,10 +66,22 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     return clamp(d, 0.0, 1.0);
 }
 
+vec2 normalize(vec2 value, float isPosition) {
+    return (value * 2.0 - (iResolution.xy * isPosition)) / iResolution.y;
+}
+
+vec2 getRectangleCenter(vec4 rectangle) {
+    return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
+}
+
+float blend(float t) {
+    float sqr = t * t;
+    return sqr / (2.0 * (sqr - t) + 1.0);
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    // First run the base cursor_blaze_lightning effect
-    vec4 baseColor;
-    mainImage(baseColor, fragCoord);
+    // Start with a transparent background
+    vec4 baseColor = vec4(0.0);
     
     vec2 vu = normalize(fragCoord, 1.);
     vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
