@@ -4,12 +4,13 @@
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
-const vec4 EXPLOSION_CORE_COLOR = vec4(1.0, 0.95, 0.8, 1.0);
-const vec4 EXPLOSION_RING1_COLOR = vec4(1.0, 0.5, 0.1, 0.9);
-const vec4 EXPLOSION_RING2_COLOR = vec4(1.0, 0.7, 0.3, 0.7);
-const vec4 EXPLOSION_RING3_COLOR = vec4(0.9, 0.9, 0.5, 0.5);
-const vec4 DEBRIS_COLOR = vec4(0.8, 0.7, 0.6, 1.0);
-const vec4 SMOKE_COLOR = vec4(0.3, 0.3, 0.3, 0.5);
+// Brighter, more vibrant explosion colors
+const vec4 EXPLOSION_CORE_COLOR = vec4(1.0, 0.98, 0.7, 1.0);  // Bright white-yellow
+const vec4 EXPLOSION_HOT_COLOR = vec4(1.0, 0.3, 0.1, 0.9);     // Bright red-orange
+const vec4 EXPLOSION_MID_COLOR = vec4(1.0, 0.6, 0.2, 0.8);     // Orange
+const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.8, 0.4, 0.6);   // Yellow
+const vec4 DEBRIS_COLOR = vec4(1.0, 0.9, 0.6, 1.0);           // Bright debris
+const vec4 SMOKE_COLOR = vec4(0.2, 0.2, 0.2, 0.7);           // Darker smoke
 
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
@@ -45,21 +46,38 @@ float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
 
 float explosionRings(vec2 p, vec2 center, float radius) {
     float d = 0.0;
-    float dist = distance(p, center);
     
-    // Shockwave with turbulence
+    // Create organic shape with multiple noise layers
+    vec2 dir = normalize(p - center);
+    float dist = length(p - center);
+    float angle = atan(dir.y, dir.x);
+    
+    // Base shape with noise distortion
+    float shapeNoise = 0.5 + 0.5*sin(angle*10.0 + iTime*5.0) * 
+                      (0.5 + 0.5*sin(dist*15.0 + iTime*3.0));
+    float baseShape = smoothstep(radius*0.9, radius*0.1, dist * shapeNoise);
+    
+    // Shockwave with organic turbulence
     float shockwave = 1.0 - smoothstep(0.0, radius*0.9, dist);
-    float turbulence = sin(dist*20.0 - iTime*10.0) * 0.1;
-    shockwave = smoothstep(0.3, 0.7, shockwave + turbulence);
+    float turbulence = (sin(dist*25.0 - iTime*12.0) * 0.2 + 
+                       sin(angle*8.0 + iTime*4.0) * 0.15) * 
+                      smoothstep(radius, 0.0, dist);
+    shockwave = smoothstep(0.2, 0.8, shockwave + turbulence);
     
-    // Core flash with flicker
-    float flicker = 0.8 + 0.2*sin(iTime*30.0);
-    d += smoothstep(radius*0.1, 0.0, dist) * 3.0 * flicker;
+    // Intense core flash with organic flicker
+    float flicker = 0.7 + 0.3*sin(iTime*40.0 + dist*10.0);
+    float core = smoothstep(radius*0.15, 0.0, dist) * 4.0 * flicker;
+    d += core * (1.0 + 0.5*sin(angle*12.0 + iTime*8.0));
     
-    // Multi-layered rings with varying speeds
-    d += smoothstep(radius*0.3, radius*0.2, dist*(0.9 + 0.1*sin(iTime*5.0))) * 0.8;
-    d += smoothstep(radius*0.5, radius*0.4, dist*(0.8 + 0.2*cos(iTime*3.0))) * 0.6;
-    d += smoothstep(radius*0.8, radius*0.7, dist*(1.1 + 0.1*sin(iTime*7.0))) * 0.4;
+    // Organic layered rings with noise
+    float ring1 = smoothstep(radius*0.4, radius*0.2, 
+                           dist*(0.8 + 0.2*sin(iTime*6.0 + angle*5.0))) * 1.0;
+    float ring2 = smoothstep(radius*0.6, radius*0.3, 
+                           dist*(0.7 + 0.3*cos(iTime*4.0 + angle*7.0))) * 0.8;
+    float ring3 = smoothstep(radius*0.9, radius*0.5, 
+                           dist*(1.0 + 0.3*sin(iTime*8.0 + angle*3.0))) * 0.6;
+    
+    d += mix(ring1, ring2, 0.5) + ring3;
     
     // Debris effect with more randomness
     for(int i = 0; i < 20; i++) {
@@ -138,12 +156,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float ringMask = smoothstep(0.3, 0.7, explosion);
             float debrisMask = smoothstep(0.1, 0.4, explosion);
             
-            vec4 explosionColor = EXPLOSION_CORE_COLOR * coreMask;
-            explosionColor = mix(explosionColor, EXPLOSION_RING1_COLOR, ringMask);
-            explosionColor = mix(explosionColor, EXPLOSION_RING2_COLOR, ringMask*0.7);
-            explosionColor = mix(explosionColor, EXPLOSION_RING3_COLOR, ringMask*0.3);
-            explosionColor = mix(explosionColor, DEBRIS_COLOR, debrisMask);
-            explosionColor = mix(explosionColor, SMOKE_COLOR, smoothstep(0.2, 0.5, explosion));
+            // More vibrant color blending
+            vec4 explosionColor = EXPLOSION_CORE_COLOR * coreMask * 1.5;
+            explosionColor = mix(explosionColor, EXPLOSION_HOT_COLOR, ringMask*1.2);
+            explosionColor = mix(explosionColor, EXPLOSION_MID_COLOR, ringMask*0.8);
+            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*0.4);
+            
+            // Bright debris with glow
+            vec4 debrisColor = DEBRIS_COLOR * (1.0 + 0.5*sin(iTime*10.0));
+            explosionColor = mix(explosionColor, debrisColor, debrisMask*1.5);
+            
+            // Dark smoke contrast
+            explosionColor = mix(explosionColor, SMOKE_COLOR, 
+                               smoothstep(0.3, 0.6, explosion)*0.8);
             
             float explosionAlpha = explosion * (1.0 - progress) * 0.9;
             baseColor = mix(baseColor, explosionColor, explosionAlpha);
