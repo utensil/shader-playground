@@ -1,12 +1,10 @@
 // Standalone implementation of lightning and explosion cursor effects
-layout(std140, binding = 0) uniform Uniforms {
-    vec3 resolution;
-    float time;
-    vec4 currentCursor;
-    vec4 previousCursor;
-    float timeCursorChange;
-    sampler2D iChannel0;
-};
+uniform vec3 iResolution;
+uniform float iTime;
+uniform vec4 iCurrentCursor;
+uniform vec4 iPreviousCursor;
+uniform float iTimeCursorChange;
+uniform sampler2D iChannel0;
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
@@ -70,7 +68,7 @@ float explosionRings(vec2 p, vec2 center, float radius) {
 }
 
 vec2 normalizeCoord(vec2 value, float isPosition) {
-    return (value * 2.0 - (resolution.xy * isPosition)) / resolution.y;
+    return (value * 2.0 - (iResolution.xy * isPosition)) / iResolution.y;
 }
 
 vec2 getRectangleCenter(vec4 rectangle) {
@@ -84,13 +82,13 @@ float blend(float t) {
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     // Start with background texture
-    vec4 baseColor = texture(Uniforms.iChannel0, fragCoord.xy / resolution.xy);
+    vec4 baseColor = texture(iChannel0, fragCoord.xy / iResolution.xy);
     
     vec2 vu = normalizeCoord(fragCoord, 1.);
-    vec4 currentCursorData = vec4(normalizeCoord(currentCursor.xy, 1.), normalizeCoord(currentCursor.zw, 0.));
-    vec4 previousCursorData = vec4(normalizeCoord(previousCursor.xy, 1.), normalizeCoord(previousCursor.zw, 0.));
+    vec4 currentCursorData = vec4(normalizeCoord(iCurrentCursor.xy, 1.), normalizeCoord(iCurrentCursor.zw, 0.));
+    vec4 previousCursorData = vec4(normalizeCoord(iPreviousCursor.xy, 1.), normalizeCoord(iPreviousCursor.zw, 0.));
     
-    float progress = blend(clamp((time - timeCursorChange) / 0.1, 0.0, 1.0));
+    float progress = blend(clamp((iTime - iTimeCursorChange) / 0.1, 0.0, 1.0));
     
     if (progress < 1.0) {
         vec2 centerCC = getRectangleCenter(currentCursorData);
