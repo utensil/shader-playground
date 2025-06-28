@@ -23,14 +23,14 @@
 #define RAY_GREEN 1.0
 #define RAY_BLUE 0.3
 
-// Brighter, more vibrant explosion colors
-const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.8, 0.3, 1.0);   // Bright yellow core
-const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.5, 0.1, 1.0);   // Orange-yellow
+// Red/orange dominated explosion colors
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.3, 0.0, 1.0);   // Deep red core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.4, 0.0, 1.0);   // Bright red
 const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);    // Intense red
-const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.3, 0.0, 1.0);    // Bright red
-const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.4, 0.1, 1.0);    // Red-orange
-const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.6, 0.2, 0.9);    // Orange
-const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.9, 0.4, 0.8);    // Bright yellow
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.25, 0.0, 1.0);   // Bright red
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.35, 0.05, 1.0); // Red-orange 
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.45, 0.1, 0.9);  // Orange
+const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.5, 0.15, 0.8);  // Orange (minimal yellow)
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -269,8 +269,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Medium explosion size (48-99 pixels) with more red
-            float randSize = 48.0 + 51.0 * random(vec2(iTime, centerCP.x));
+            // Smaller explosion size (24-50 pixels) with more red/orange
+            float randSize = 24.0 + 26.0 * random(vec2(iTime, centerCP.x));
             float explosion = explosionRings(vu, centerCP, randSize);
             
             // Layered colors for different effects
