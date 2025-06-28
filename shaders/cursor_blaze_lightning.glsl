@@ -108,6 +108,14 @@ vec4 permute(vec4 x) {
     return mod(((x*34.0)+1.0)*x, 289.0);
 }
 
+vec2 fade(vec2 t) {
+    return t*t*t*(t*(t*6.0-15.0)+10.0);
+}
+
+vec3 fade(vec3 t) {
+    return t*t*t*(t*(t*6.0-15.0)+10.0);
+}
+
 // Fade functions for different dimensions
 
 // Classic Perlin noise implementations
@@ -155,14 +163,6 @@ float cnoise(vec2 P) {
 vec4 taylorInvSqrt(vec4 r) {
     return 1.79284291400159 - 0.85373472095314 * r;
 }
-vec2 fade(vec2 t) {
-    return t*t*t*(t*(t*6.0-15.0)+10.0);
-}
-
-vec3 fade(vec3 t) {
-    return t*t*t*(t*(t*6.0-15.0)+10.0);
-}
-
 
 float cnoise(vec3 P) {
     vec3 Pi0 = floor(P);
