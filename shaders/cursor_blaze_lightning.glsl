@@ -135,14 +135,27 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy);
     #endif
     
-    // Check lightning activation conditions
+    // Debug lightning activation
     vec2 prev_pos = iCurrentCursor.xy;
     vec2 curr_pos = iCurrentCursor.zw;
     float delta_x = curr_pos.x - prev_pos.x;
     float delta_y = abs(curr_pos.y - prev_pos.y);
     bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
+    
+    // Visual debug - show green dot when conditions met
+    if (distance(fragCoord, vec2(20,20)) < 10.0) {
+        newColor.rgb = should_lightning ? vec3(0,1,0) : vec3(1,0,0);
+    }
     vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
+    
+    // Debug cursor positions
+    if (distance(fragCoord, vec2(20,40)) < 10.0) {
+        newColor.rgb = vec3(prev_pos.x/iResolution.x, prev_pos.y/iResolution.y, 0);
+    }
+    if (distance(fragCoord, vec2(20,60)) < 10.0) {
+        newColor.rgb = vec3(curr_pos.x/iResolution.x, curr_pos.y/iResolution.y, 0);
+    }
     
     // Initialize origin at cursor position
     vec2 origin = curr_pos;
@@ -206,11 +219,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
     }
     
-    // Visual indicator when lightning is active (purple tint)
+    // Strong visual indicator when lightning is active
     if (should_lightning) {
         vec4 lightning_tint = vec4(0.7, 0.2, 1.0, 1.0); // Purple color
-        float tint_strength = smoothstep(0.0, 0.5, progress);
-        newColor = mix(newColor, lightning_tint, tint_strength * 0.5); // 50% purple blend
+        newColor = mix(newColor, lightning_tint, 0.8); // 80% purple blend
     }
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
