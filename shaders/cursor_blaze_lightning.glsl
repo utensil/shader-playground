@@ -134,13 +134,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
     
-    // Debug cursor positions
-    if (distance(fragCoord, vec2(20,40)) < 10.0) {
-        newColor.rgb = vec3(prev_pos.x/iResolution.x, prev_pos.y/iResolution.y, 0);
-    }
-    if (distance(fragCoord, vec2(20,60)) < 10.0) {
-        newColor.rgb = vec3(curr_pos.x/iResolution.x, curr_pos.y/iResolution.y, 0);
-    }
+    // Get cursor positions
+    vec2 prev_pos = iCurrentCursor.xy;
+    vec2 curr_pos = iCurrentCursor.zw;
+    
+    // Debug cursor positions (commented out for now)
+    // if (distance(fragCoord, vec2(20,40)) < 10.0) {
+    //     newColor.rgb = vec3(prev_pos.x/iResolution.x, prev_pos.y/iResolution.y, 0);
+    // }
+    // if (distance(fragCoord, vec2(20,60)) < 10.0) {
+    //     newColor.rgb = vec3(curr_pos.x/iResolution.x, curr_pos.y/iResolution.y, 0);
+    // }
     
 
     vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
@@ -185,16 +189,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     }
     
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
+    // Lightning activation check
+    float delta_x = curr_pos.x - prev_pos.x;
+    float delta_y = abs(curr_pos.y - prev_pos.y);
+    bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
+    
     // Lightning activation flash
     if (should_lightning) {
-        // Add a quick white flash when lightning first activates
-        float flash = smoothstep(0.0, 0.05, iTime - iTimeCursorChange);
-        newColor.rgb = mix(newColor.rgb, vec3(1.0), flash * 0.3);
-        
-        // Visual indicator in top-right corner
-        if (fragCoord.x > iResolution.x - 20.0 && fragCoord.y < 20.0) {
-            newColor.rgb = mix(newColor.rgb, vec3(0.7, 0.2, 1.0), 0.8);
-        }
+        // Simple flash effect
+        newColor.rgb = mix(newColor.rgb, vec3(1.0, 1.0, 0.5), 0.3);
     }
     
     fragColor = newColor;
