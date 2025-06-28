@@ -181,16 +181,16 @@ float explosionParticles(vec2 p, vec2 center, float radius, float time) {
 }
 
 float explosionRings(vec2 p, vec2 center, float radius) {
-    float time = mod(iTime*2.0, 1.0); // Even faster looping
+    float time = mod(iTime*3.0, 1.0); // Faster looping
     
-    // Directional distance calculation
+    // Directional distance with more chaos
     vec2 offset = p - center;
-    float angle = atan(offset.y, offset.x);
+    float angle = atan(offset.y, offset.x) + sin(iTime*10.0) * 0.5;
     float dist = length(offset) / radius;
     
-    // Direction-biased core with turbulence
-    vec2 noiseDir = normalize(hash2(vec2(floor(angle*5.0), time*10.0)));
-    float directionalBias = 0.5 + 0.5*dot(normalize(offset), noiseDir);
+    // Extreme directional bias with turbulence
+    vec2 noiseDir = normalize(hash2(vec2(floor(angle*8.0), time*15.0)) * 2.0 - 1.0);
+    float directionalBias = 0.3 + 0.7*pow(dot(normalize(offset), noiseDir), 3.0);
     
     float core = smoothstep(0.4, 0.0, dist) * 
                 (1.0 + 0.5*sin(iTime*60.0 + angle*12.0)) * 
@@ -263,29 +263,29 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Ultra-tiny explosion with extreme randomness
-            float randSize = 0.15 + 0.35 * pow(random(vec2(iTime*2.0, centerCP.x)), 4.0); // More extreme size variation
+            // Half-sized explosion with extreme directional randomness
+            float randSize = 0.075 + 0.175 * pow(random(vec2(iTime*3.0, centerCP.x)), 6.0); // More extreme size variation
             vec2 cursorRightBottom = centerCP + vec2(
-                currentCursorData.z * 0.5, 
-                currentCursorData.w * 0.5  // Positive Y for bottom on macOS
+                currentCursorData.z * 0.25, 
+                currentCursorData.w * 0.25  // Positive Y for bottom on macOS
             );
             
-            // Extreme position jitter with directional bias
+            // Wild position jitter with directional chaos
             vec2 explosionPos = cursorRightBottom;
-            vec2 jitterDir = normalize(hash2(vec2(iTime*0.3, centerCP.x*1.7)) * 2.0 - 1.0);
-            explosionPos += jitterDir * 0.15 * pow(random(vec2(iTime, centerCP.x)), 2.0);
+            vec2 jitterDir = normalize(hash2(vec2(iTime*0.5, centerCP.x*2.3)) * 4.0 - 2.0);
+            explosionPos += jitterDir * 0.075 * pow(random(vec2(iTime*1.5, centerCP.x)), 3.0);
             
-            // Multi-directional explosion
+            // Multi-directional explosion with more extreme angles
             float explosion = 0.0;
-            for (int j = 0; j < 3; j++) {
-                vec2 dir = normalize(hash2(vec2(float(j)*1.37, iTime*0.5)) * 2.0 - 1.0);
-                vec2 offsetPos = explosionPos + dir * 0.02;
-                explosion += explosionRings(vu, offsetPos, randSize * (0.8 + 0.4*random(vec2(float(j), iTime))));
+            for (int j = 0; j < 4; j++) {
+                vec2 dir = normalize(hash2(vec2(float(j)*2.71, iTime*0.7)) * 4.0 - 2.0);
+                vec2 offsetPos = explosionPos + dir * 0.01 * (1.0 + random(vec2(float(j), iTime*2.0)));
+                explosion += explosionRings(vu, offsetPos, randSize * (0.6 + 0.6*random(vec2(float(j)*3.0, iTime*1.5))));
             }
             explosion = clamp(explosion, 0.0, 1.0);
             
-            // Create 5-8 micro booms with extreme directional randomness
-            int numBooms = 5 + int(random(vec2(iTime*2.3, centerCP.y)) * 4.0);
+            // Create 6-10 micro booms with chaotic directions
+            int numBooms = 6 + int(random(vec2(iTime*3.7, centerCP.y)) * 5.0);
             for (int i = 0; i < numBooms; i++) {
                 // Direction clusters with random spread
                 float cluster = floor(float(i)/2.0);
