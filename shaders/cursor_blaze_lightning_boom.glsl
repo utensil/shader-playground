@@ -15,15 +15,7 @@
     const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);  // Blue-white core
     const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);  // Blue edges
 #endif
-// Inspired by https://www.shadertoy.com/view/4d2XR1
-#define RAY_BRIGHTNESS 12.0
-#define RAY_DENSITY 5.0
-#define RAY_CURVATURE 18.0
-#define RAY_RED 4.0
-#define RAY_GREEN 1.0
-#define RAY_BLUE 0.3
-
-// Inspired by nimitz's shader (https://www.shadertoy.com/view/lsSGzy)
+// Unified ray parameters inspired by both shaders
 #define RAY_BRIGHTNESS 12.0
 #define RAY_GAMMA 5.0
 #define RAY_DENSITY 4.5
