@@ -322,6 +322,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float sdfCursor = getSdfRectangle(vu, currentCursor.xy - (currentCursor.zw * offsetFactor), currentCursor.zw * 0.5);
     float sdfTrail = getSdfParallelogram(vu, v0, v1, v2, v3);
 
+    // Lightning activation check
+    float delta_x = curr_pos.x - prev_pos.x;
+    float delta_y = abs(curr_pos.y - prev_pos.y);
+    bool should_lightning = delta_x > 1.0 && delta_y < 5.0;
+
     if (progress < 1.0) {
         vec2 trailAxis = v3 - v0;
         float trailLength = length(trailAxis);
@@ -345,11 +350,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     }
     
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
-    // Lightning activation check
-    float delta_x = curr_pos.x - prev_pos.x;
-    float delta_y = abs(curr_pos.y - prev_pos.y);
-    bool should_lightning = delta_x > 1.0 && delta_y < 5.0;
-    
     // Lightning effect
     if (should_lightning) {
         float screen_width = iResolution.x;
