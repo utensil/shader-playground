@@ -42,10 +42,10 @@ When the cursor moves left, a highly realistic explosion effect is triggered:
 ### Color Spectrum
 | Temperature | Color | RGB Value | Usage |
 |-------------|-------|-----------|-------|
-| 2000K+ | White-Yellow | (1.0, 0.98, 0.7) | Core flash |
-| 1500K | Orange-Red | (1.0, 0.3, 0.1) | Primary shock front |
-| 1000K | Deep Red | (1.0, 0.6, 0.2) | Secondary wave |
-| 800K | Glowing Embers | (0.9, 0.8, 0.4) | Cooling phase |
+| 2500K+ | White-Yellow | (1.0, 0.95, 0.6) | Core flash |
+| 1800K | Fiery Red | (1.0, 0.2, 0.0) | Primary shock front |
+| 1200K | Bright Orange | (1.0, 0.5, 0.1) | Secondary wave |
+| 900K | Vivid Yellow | (1.0, 0.8, 0.3) | Cooling phase |
 
 ## Technical Implementation
 
