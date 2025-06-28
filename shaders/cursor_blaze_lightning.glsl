@@ -366,9 +366,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
             );
             
             // Calculate merge point (70% toward cursor)
-            // Target current cursor position with some randomness
+            // Target current cursor position with some randomness (accounting for inverted Y)
             float merge_x = curr_pos.x + (rand - 0.5) * 50.0;
-            float merge_y = curr_pos.y + (fract(rand * 437.585) - 0.5) * 30.0;
+            float merge_y = iResolution.y - curr_pos.y + (fract(rand * 437.585) - 0.5) * 30.0;
             
             // Add FBM to path for organic movement
             vec2 mid = mix(origin, vec2(merge_x, merge_y), 0.5);
