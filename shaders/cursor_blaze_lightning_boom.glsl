@@ -269,9 +269,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Smaller explosion size (24-50 pixels) with more red/orange
-            float randSize = 24.0 + 26.0 * random(vec2(iTime, centerCP.x));
-            float explosion = explosionRings(vu, centerCP, randSize);
+            // Larger explosion size (36-75 pixels) at random position near cursor
+            float randSize = 36.0 + 39.0 * random(vec2(iTime, centerCP.x));
+            vec2 randomOffset = vec2(
+                random(vec2(iTime, centerCP.y)) * 2.0 - 1.0,
+                random(vec2(iTime, centerCP.x)) * 2.0 - 1.0
+            ) * 0.3; // Random offset within 30% of screen
+            vec2 explosionPos = centerCP + randomOffset * (randSize / iResolution.y);
+            float explosion = explosionRings(vu, explosionPos, randSize);
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
