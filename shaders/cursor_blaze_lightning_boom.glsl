@@ -1,3 +1,4 @@
+#define PI 3.14159265359
 // Standalone implementation of lightning and explosion cursor effects
 // Uses pre-declared uniforms from the cursor system:
 // iResolution, iTime, iCurrentCursor, iPreviousCursor, iTimeCursorChange, iChannel0
@@ -253,7 +254,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Smaller explosion with reduced variance (50-150 pixels)
+            // Main explosion with smaller booms around it
             float randSize = 50.0 + 100.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
             vec2 cursorRightBottom = centerCP + vec2(
                 currentCursorData.z * 0.5, 
@@ -261,6 +262,33 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             );
             vec2 explosionPos = cursorRightBottom;
             float explosion = explosionRings(vu, explosionPos, randSize);
+            
+            // Create 5-8 smaller booms radiating out
+            int numBooms = 5 + int(random(vec2(iTime, centerCP.y)) * 4.0);
+            for (int i = 0; i < numBooms; i++) {
+                // Random direction and distance from main explosion
+                float angle = random(vec2(float(i), centerCP.x)) * 2.0 * PI;
+                float distance = 0.3 + 0.4 * random(vec2(float(i), centerCP.y));
+                vec2 boomPos = explosionPos + vec2(cos(angle), sin(angle)) * randSize * distance;
+                
+                // Random size (20-60 pixels)
+                float boomSize = 20.0 + 40.0 * random(vec2(float(i), iTime));
+                
+                // Random color variation between yellow and red
+                float colorMix = random(vec2(float(i), centerCP.x));
+                vec4 boomColor = mix(
+                    mix(EXPLOSION_CORE2_COLOR, EXPLOSION_HOT1_COLOR, 0.5),
+                    mix(EXPLOSION_HOT2_COLOR, EXPLOSION_MID1_COLOR, 0.5),
+                    colorMix
+                );
+                
+                // Create the boom
+                float boom = explosionRings(vu, boomPos, boomSize);
+                
+                // Apply color with some randomness
+                float boomAlpha = boom * (1.0 - (progress * 0.5)) * 1.5;
+                baseColor = mix(baseColor, boomColor, boomAlpha);
+            }
             
             // Apply reference shader's color inversion
             vec3 col = vec3(RAY_RED, RAY_GREEN, RAY_BLUE);
