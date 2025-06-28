@@ -102,6 +102,8 @@ vec2 getRectangleCenter(vec4 rectangle) {
     return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
 }
 
+// Classic Perlin noise helper functions
+
 // Classic Perlin noise implementations
 float cnoise(vec2 P) {
     vec3 Pi = floor(vec3(P.xyx)) + vec3(0.0, 0.0, 1.0);
