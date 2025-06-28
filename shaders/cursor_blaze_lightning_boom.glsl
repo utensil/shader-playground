@@ -23,14 +23,14 @@
 #define RAY_GREEN 1.0
 #define RAY_BLUE 0.3
 
-// Enhanced explosion color layers with ray-inspired colors
-const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.95, 0.6, 1.0);  // White-hot core
-const vec4 EXPLOSION_CORE2_COLOR = vec4(RAY_RED*0.8, RAY_GREEN*0.8, RAY_BLUE*0.8, 1.0); // Ray-inspired
-const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);    // Intense red
-const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.4, 0.1, 0.9);    // Orange-red
-const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.6, 0.2, 0.8);    // Orange
-const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.8, 0.3, 0.7);    // Yellow-orange
-const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.9, 0.5, 0.6);    // Yellow
+// Enhanced explosion colors with more vibrant yellows and reds
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.98, 0.3, 1.0);  // Bright yellow core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.9, 0.2, 1.0);   // Golden yellow
+const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.1, 0.0, 1.0);    // Intense red
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.3, 0.0, 0.9);    // Bright red-orange 
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.5, 0.1, 0.9);    // Orange
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.7, 0.2, 0.8);    // Yellow-orange
+const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.9, 0.4, 0.7);    // Bright yellow
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -160,10 +160,10 @@ float explosionRings(vec2 p, vec2 center, float radius) {
                       smoothstep(radius, 0.0, dist);
     shockwave = smoothstep(0.2, 0.8, shockwave + turbulence);
     
-    // Intense core flash with organic flicker
-    float flicker = 0.7 + 0.3*sin(iTime*40.0 + dist*10.0);
-    float core = smoothstep(radius*0.15, 0.0, dist) * 4.0 * flicker;
-    d += core * (1.0 + 0.5*sin(angle*12.0 + iTime*8.0));
+    // More intense and random core flash
+    float flicker = 0.6 + 0.4*sin(iTime*50.0 + dist*15.0 + random(vec2(angle, iTime)));
+    float core = smoothstep(radius*0.15, 0.0, dist) * 5.0 * flicker;
+    d += core * (1.0 + 0.7*sin(angle*15.0 + iTime*10.0));
     
     // Asymmetric explosion lobes with directional bias
     float lobe1 = smoothstep(radius*0.5, radius*0.2, 
@@ -278,14 +278,26 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float ringMask = smoothstep(0.3, 0.7, explosion);
             float debrisMask = smoothstep(0.1, 0.4, explosion);
             
-            // More intense color blending
-            vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 3.5;
-            explosionColor = mix(explosionColor, EXPLOSION_CORE2_COLOR, coreMask*2.5);
-            explosionColor = mix(explosionColor, EXPLOSION_HOT1_COLOR, ringMask*2.5);
-            explosionColor = mix(explosionColor, EXPLOSION_HOT2_COLOR, ringMask*2.0);
-            explosionColor = mix(explosionColor, EXPLOSION_MID1_COLOR, ringMask*1.5);
-            explosionColor = mix(explosionColor, EXPLOSION_MID2_COLOR, ringMask*1.0);
-            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*0.8);
+            // More vibrant and random color blending
+            float colorRand = random(vec2(iTime, centerCP.x));
+            vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 4.0;
+            
+            // Randomly emphasize different color layers
+            if (colorRand > 0.5) {
+                explosionColor = mix(explosionColor, EXPLOSION_CORE2_COLOR, coreMask*3.0);
+                explosionColor = mix(explosionColor, EXPLOSION_HOT1_COLOR, ringMask*3.0);
+            } else {
+                explosionColor = mix(explosionColor, EXPLOSION_HOT2_COLOR, ringMask*3.0);
+                explosionColor = mix(explosionColor, EXPLOSION_MID1_COLOR, ringMask*2.0);
+            }
+            
+            // Always include some bright yellow
+            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*1.5);
+            
+            // Add random color accents
+            if (colorRand > 0.7) {
+                explosionColor.r += 0.3 * ringMask;
+            }
             
             // Super-bright glowing debris
             vec4 debrisColor = DEBRIS_COLOR * (1.2 + 0.8*sin(iTime*12.0));
