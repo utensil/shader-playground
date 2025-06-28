@@ -208,11 +208,13 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
-    // Draw simple test lightning if active
+    // Basic lightning visualization (straight line)
     if (should_lightning) {
-        vec2 target = curr_pos; // Start with simple straight line
+        vec2 target = curr_pos;
         float branch = drawLightningBranch(fragCoord, origin, target, LIGHTNING_WIDTH);
-        newColor.rgb = mix(newColor.rgb, CORE_COLOR, branch * 0.5); // Reduced intensity for testing
+        float fade = smoothstep(0.0, 0.3, distance(fragCoord, 0.5*(origin+target)));
+        vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, fade);
+        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 0.7);
     }
     
     fragColor = mix(newColor, fragColor, step(sdfCursor, 0.));
