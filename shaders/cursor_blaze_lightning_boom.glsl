@@ -272,8 +272,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Bigger explosion at right-bottom of cursor (accounting for macOS inverted Y)
-            float randSize = 150.0 + 200.0 * random(vec2(iTime, centerCP.x));
+            // Explosion with extreme size variance (100-400 pixels)
+            float randSize = 100.0 + 300.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
             vec2 cursorRightBottom = centerCP + vec2(
                 currentCursorData.z * 0.5, 
                 currentCursorData.w * 0.5  // Positive Y for bottom on macOS
@@ -294,17 +294,20 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float colorRand = random(vec2(iTime, centerCP.x));
             vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 4.0;
             
-            // Randomly emphasize different color layers
-            if (colorRand > 0.5) {
-                explosionColor = mix(explosionColor, EXPLOSION_CORE2_COLOR, coreMask*3.0);
-                explosionColor = mix(explosionColor, EXPLOSION_HOT1_COLOR, ringMask*3.0);
-            } else {
-                explosionColor = mix(explosionColor, EXPLOSION_HOT2_COLOR, ringMask*3.0);
-                explosionColor = mix(explosionColor, EXPLOSION_MID1_COLOR, ringMask*2.0);
-            }
+            // Chaotic red/orange mixing with more randomness
+            float mixFactor1 = random(vec2(colorRand, iTime*0.1));
+            float mixFactor2 = random(vec2(colorRand*1.3, iTime*0.2));
             
-            // Always include some bright yellow
-            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*1.5);
+            explosionColor = mix(
+                mix(EXPLOSION_CORE2_COLOR, EXPLOSION_HOT1_COLOR, mixFactor1),
+                mix(EXPLOSION_HOT2_COLOR, EXPLOSION_MID1_COLOR, mixFactor2),
+                ringMask*3.0
+            );
+            
+            // Add some orange highlights
+            if (random(vec2(colorRand, iTime*0.3)) > 0.3) {
+                explosionColor = mix(explosionColor, EXPLOSION_MID2_COLOR, ringMask*1.5);
+            }
             
             // Add random color accents
             if (colorRand > 0.7) {
