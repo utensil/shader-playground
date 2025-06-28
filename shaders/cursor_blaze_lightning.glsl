@@ -165,8 +165,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         newColor.rgb = vec3(curr_pos.x/iResolution.x, curr_pos.y/iResolution.y, 0);
     }
     
-    // Initialize origin at cursor position (in screen coordinates)
-    vec2 origin = curr_pos * iResolution.xy;
+    // Initialize origin at cursor position (in normalized coordinates)
+    vec2 origin = curr_pos;
     
     // Calculate origin zone if lightning should activate
     if (should_lightning) {
@@ -195,8 +195,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     vec2 v2 = vec2(previousCursor.x + currentCursor.z * invertedVertexFactor, previousCursor.y);
     vec2 v3 = vec2(previousCursor.x + currentCursor.z * vertexFactor, previousCursor.y - previousCursor.w);
     
-    vec4 newColor = vec4(fragColor);
-
     float progress = blend(clamp((iTime - iTimeCursorChange) / DURATION, 0.0, 1.0));
 
     vec2 centerCC = getRectangleCenter(currentCursor);
@@ -229,10 +227,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     
     // Basic lightning visualization
     if (should_lightning) {
-        vec2 target = curr_pos * iResolution.xy;
-        float branch = drawLightningBranch(fragCoord, origin, target, LIGHTNING_WIDTH * iResolution.y);
+        vec2 target = curr_pos;
+        float branch = drawLightningBranch(fragCoord/iResolution.xy, origin, target, LIGHTNING_WIDTH);
         vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, 0.5);
-        newColor.rgb = mix(newColor.rgb, lightning_color, branch);
+        newColor.rgb = mix(newColor.rgb, lightning_color, branch * 0.5);
     }
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     // Lightning activation flash
@@ -247,5 +245,5 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         }
     }
     
-    fragColor = mix(newColor, fragColor, step(sdfCursor, 0.));
+    fragColor = newColor;
 }
