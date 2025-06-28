@@ -200,8 +200,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         } 
         // Explosion effect when moving left
         else {
-            // Increased size and intensity
-            float explosion = explosionRings(vu, centerCP, lineLength * 0.7); 
+            // 10x larger explosion radius
+            float explosion = explosionRings(vu, centerCP, lineLength * 7.0); 
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
