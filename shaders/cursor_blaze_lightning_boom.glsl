@@ -151,8 +151,8 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     float angle = atan(uv.y, uv.x);
     float dist = length(uv);
     
-    // Strictly limit splash to a small area around cursor
-    float maxDist = radius * 0.5; // Much smaller splash radius
+    // Larger splash area for bigger explosion
+    float maxDist = radius * 1.0; // Double the splash radius
     if (dist > maxDist) return 0.0; // Cut off completely beyond limit
     
     // Multi-frequency noise for variation within limits
@@ -253,8 +253,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Smaller explosion with less variance (50-150 pixels)
-            float randSize = 50.0 + 100.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
+            // Larger explosion with more variance (100-300 pixels)
+            float randSize = 100.0 + 200.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
             vec2 cursorRightBottom = centerCP + vec2(
                 currentCursorData.z * 0.5, 
                 currentCursorData.w * 0.5  // Positive Y for bottom on macOS
