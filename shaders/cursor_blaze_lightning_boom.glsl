@@ -4,11 +4,14 @@
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
-// Ultra vibrant explosion colors
-const vec4 EXPLOSION_CORE_COLOR = vec4(1.0, 0.95, 0.6, 1.0);   // Intense white-yellow
-const vec4 EXPLOSION_HOT_COLOR = vec4(1.0, 0.2, 0.0, 1.0);     // Fiery red
-const vec4 EXPLOSION_MID_COLOR = vec4(1.0, 0.5, 0.1, 0.9);     // Bright orange
-const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.8, 0.3, 0.7);    // Vivid yellow
+// Enhanced explosion color layers
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.98, 0.7, 1.0);  // White-hot core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.9, 0.5, 1.0);   // Bright yellow
+const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.3, 0.0, 1.0);    // Intense red-orange
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.5, 0.1, 0.9);    // Orange-yellow
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.7, 0.2, 0.8);    // Golden yellow
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.8, 0.3, 0.7);    // Lemon yellow
+const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.85, 0.4, 0.6);   // Cool yellow
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -161,18 +164,22 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         } 
         // Explosion effect when moving left
         else {
-            float explosion = explosionRings(vu, centerCP, lineLength * 0.5);
+            // Adjust the 0.5 multiplier to change explosion size (smaller = smaller explosion)
+            float explosion = explosionRings(vu, centerCP, lineLength * 0.4); 
             
             // Layered colors for different effects
             float coreMask = smoothstep(0.7, 1.0, explosion);
             float ringMask = smoothstep(0.3, 0.7, explosion);
             float debrisMask = smoothstep(0.1, 0.4, explosion);
             
-            // Ultra-vibrant color blending with boosted saturation
-            vec4 explosionColor = EXPLOSION_CORE_COLOR * coreMask * 2.0;
-            explosionColor = mix(explosionColor, EXPLOSION_HOT_COLOR, ringMask*1.5);
-            explosionColor = mix(explosionColor, EXPLOSION_MID_COLOR, ringMask*1.0);
-            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*0.6);
+            // Multi-layered color blending
+            vec4 explosionColor = EXPLOSION_CORE1_COLOR * coreMask * 2.5;
+            explosionColor = mix(explosionColor, EXPLOSION_CORE2_COLOR, coreMask*1.8);
+            explosionColor = mix(explosionColor, EXPLOSION_HOT1_COLOR, ringMask*1.8);
+            explosionColor = mix(explosionColor, EXPLOSION_HOT2_COLOR, ringMask*1.3);
+            explosionColor = mix(explosionColor, EXPLOSION_MID1_COLOR, ringMask*0.9);
+            explosionColor = mix(explosionColor, EXPLOSION_MID2_COLOR, ringMask*0.5);
+            explosionColor = mix(explosionColor, EXPLOSION_COOL_COLOR, ringMask*0.3);
             
             // Super-bright glowing debris
             vec4 debrisColor = DEBRIS_COLOR * (1.2 + 0.8*sin(iTime*12.0));
