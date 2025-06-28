@@ -336,9 +336,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         float trailAlpha = 1.0 - smoothstep(sdfTrail, -0.01, 0.001);
         trailAlpha *= gradient;
         
-        newColor = mix(newColor, TRAIL_COLOR_ACCENT, trailAlpha);
-        newColor = mix(newColor, TRAIL_COLOR, trailAlpha);
-        newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
+        vec4 activeTrailColor = should_lightning ? vec4(0.7, 0.2, 1.0, 1.0) : TRAIL_COLOR;
+        vec4 activeAccentColor = should_lightning ? vec4(0.9, 0.4, 1.0, 1.0) : TRAIL_COLOR_ACCENT;
+        
+        newColor = mix(newColor, activeAccentColor, trailAlpha);
+        newColor = mix(newColor, activeTrailColor, trailAlpha);
+        newColor = mix(newColor, activeTrailColor, antialising(sdfTrail) * gradient);
     }
     
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
