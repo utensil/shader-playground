@@ -102,12 +102,36 @@ vec2 getRectangleCenter(vec4 rectangle) {
     return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
 }
 
-// Simple lightning branch function
-float drawLightningBranch(vec2 p, vec2 a, vec2 b, float width) {
+// Lightning constants
+const int MAX_BRANCHES = 5;
+const float BRANCH_WIDTH = 0.01;
+const float NOISE_FREQ = 10.0;
+const vec3 CORE_COLOR = vec3(1.0, 0.8, 0.2);
+const vec3 EDGE_COLOR = vec3(0.7, 0.2, 1.0);
+
+// Lightning branch function with noise
+float drawLightningBranch(vec2 p, vec2 a, vec2 b, float width, float time) {
     vec2 dir = normalize(b - a);
     vec2 normal = vec2(-dir.y, dir.x);
-    float d = dot(p - a, normal);
+    
+    // Add Perlin noise trembling
+    float noise = cnoise(vec3(p * NOISE_FREQ, time * 10.0)) * 0.02;
+    
+    // Calculate distance with noise offset
+    float d = dot(p - a + noise, normal);
     return smoothstep(width, 0.0, abs(d));
+}
+
+// Fractal Brownian Motion for organic paths
+float fbm(vec2 p) {
+    float amp = 0.5;
+    float noise = 0.0;
+    for(int i=0; i<3; i++) {
+        noise += amp * cnoise(p);
+        amp *= 0.5;
+        p *= 2.0;
+    }
+    return noise;
 }
 
 const vec4 TRAIL_COLOR = vec4(1.0, 0.725, 0.161, 1.0);
@@ -194,10 +218,41 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float delta_y = abs(curr_pos.y - prev_pos.y);
     bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
     
-    // Lightning activation flash
+    // Lightning effect
     if (should_lightning) {
-        // Simple flash effect
-        newColor.rgb = mix(newColor.rgb, vec3(1.0, 1.0, 0.5), 0.3);
+        float screen_width = iResolution.x;
+        float travel_dist = curr_pos.x - prev_pos.x;
+        float zone_width = min(travel_dist * 0.3, screen_width * 0.4);
+        float zone_top = iResolution.y * 0.1;
+        
+        // Generate random branch origins in top zone
+        for (int i = 0; i < MAX_BRANCHES; i++) {
+            float rand = fract(sin(float(i)*12.9898) * 43758.5453);
+            vec2 origin = vec2(
+                prev_pos.x + rand * zone_width,
+                zone_top
+            );
+            
+            // Calculate merge point (70% toward cursor)
+            float merge_x = mix(origin.x, curr_pos.x, 0.7);
+            float merge_y = mix(iResolution.y * 0.25, iResolution.y * 0.75, 
+                               fract(sin(float(i)*78.233) * 126.5453));
+            
+            // Add FBM to path for organic movement
+            vec2 mid = mix(origin, vec2(merge_x, merge_y), 0.5);
+            mid += vec2(fbm(mid + iTime), fbm(mid + iTime + 10.0)) * 0.1;
+            
+            // Draw branch
+            float branch1 = drawLightningBranch(fragCoord, origin, mid, BRANCH_WIDTH, iTime);
+            float branch2 = drawLightningBranch(fragCoord, mid, vec2(merge_x, merge_y), BRANCH_WIDTH, iTime);
+            float branch = max(branch1, branch2);
+            
+            // Color with edge fade
+            float fade = smoothstep(0.0, 0.2, distance(fragCoord, mid)/iResolution.y);
+            vec3 bolt_color = mix(CORE_COLOR, EDGE_COLOR, fade);
+            
+            newColor.rgb = mix(newColor.rgb, bolt_color, branch);
+        }
     }
     
     fragColor = newColor;
