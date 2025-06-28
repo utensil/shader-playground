@@ -234,7 +234,7 @@ float cnoise(vec3 P) {
 
 // Lightning constants
 const int MAX_BRANCHES = 5;
-const float BRANCH_WIDTH = 0.03;
+const float BRANCH_WIDTH = 0.05;
 const float NOISE_FREQ = 10.0;
 const vec3 CORE_COLOR = vec3(1.0, 0.9, 0.3);
 const vec3 EDGE_COLOR = vec3(0.9, 0.4, 1.0);
@@ -325,7 +325,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     // Lightning activation check
     float delta_x = curr_pos.x - prev_pos.x;
     float delta_y = abs(curr_pos.y - prev_pos.y);
-    bool should_lightning = false; //true; // delta_x > 0.0;
+    bool should_lightning = delta_x > 5.0 && delta_y < 10.0;
 
     if (progress < 1.0) {
         vec2 trailAxis = v3 - v0;
@@ -366,9 +366,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
             );
             
             // Calculate merge point (70% toward cursor)
-            float merge_x = mix(origin.x, curr_pos.x, 0.7);
-            float merge_y = mix(iResolution.y * 0.25, iResolution.y * 0.75, 
-                               fract(sin(float(i)*78.233) * 126.5453));
+            // Target current cursor position with some randomness
+            float merge_x = curr_pos.x + (rand - 0.5) * 50.0;
+            float merge_y = curr_pos.y + (fract(rand * 437.585) - 0.5) * 30.0;
             
             // Add FBM to path for organic movement
             vec2 mid = mix(origin, vec2(merge_x, merge_y), 0.5);
@@ -383,7 +383,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
             float fade = smoothstep(0.0, 0.2, distance(fragCoord, mid)/iResolution.y);
             vec3 bolt_color = mix(CORE_COLOR, EDGE_COLOR, fade);
             
-            newColor.rgb = mix(newColor.rgb, bolt_color, branch * 1.5);
+            newColor.rgb = mix(newColor.rgb, bolt_color * 3.0, branch * 3.0);
         }
     }
     
