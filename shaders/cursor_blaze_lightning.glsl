@@ -62,6 +62,8 @@ vec2 getRectangleCenter(vec4 rectangle) {
 
 const vec4 TRAIL_COLOR = vec4(1.0, 0.725, 0.161, 1.0);
 const vec4 TRAIL_COLOR_ACCENT = vec4(1.0, 0., 0., 1.0);
+const vec4 BACKWARD_TRAIL_COLOR = vec4(0.5, 0.0, 1.0, 1.0); // Purple
+const vec4 BACKWARD_TRAIL_ACCENT = vec4(0.8, 0.0, 0.8, 1.0); // Lighter purple
 // const vec4 TRAIL_COLOR = vec4(0.482, 0.886, 1.0, 1.0);
 // const vec4 TRAIL_COLOR_ACCENT = vec4(0.0, 0.424, 1.0, 1.0);
 const vec4 CURRENT_CURSOR_COLOR = TRAIL_COLOR;
@@ -69,7 +71,7 @@ const vec4 PREVIOUS_CURSOR_COLOR = TRAIL_COLOR;
 const float DURATION = 0.1;
 
 // Lightning effect constants
-const bool USE_LIGHTNING = true; // Toggle lightning effect
+const bool USE_LIGHTNING = false; // Toggle lightning effect
 const vec4 LIGHTNING_COLOR = vec4(0.0, 0.5, 1.0, 1.0); // Bright blue
 const float LIGHTNING_WIDTH = 0.02; // Thickness of the lightning
 const float LIGHTNING_SPEED = 2.0; // Speed of the strike
@@ -133,9 +135,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         float trailAlpha = 1.0 - smoothstep(sdfTrail, -0.01, 0.001);
         trailAlpha *= gradient;
         
-        newColor = mix(newColor, TRAIL_COLOR_ACCENT, trailAlpha);
-        newColor = mix(newColor, TRAIL_COLOR, trailAlpha);
-        newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
+        // Use purple trail when moving left (backwards)
+        if (currentCursor.x < previousCursor.x) {
+            newColor = mix(newColor, BACKWARD_TRAIL_ACCENT, trailAlpha);
+            newColor = mix(newColor, BACKWARD_TRAIL_COLOR, trailAlpha);
+            newColor = mix(newColor, BACKWARD_TRAIL_COLOR, antialising(sdfTrail) * gradient);
+        } else {
+            newColor = mix(newColor, TRAIL_COLOR_ACCENT, trailAlpha);
+            newColor = mix(newColor, TRAIL_COLOR, trailAlpha);
+            newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
+        }
         
         // Apply lightning effect when cursor moves left-to-right
         if (USE_LIGHTNING && currentCursor.x > previousCursor.x) {
