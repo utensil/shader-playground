@@ -146,12 +146,12 @@ float explosionParticles(vec2 p, vec2 center, float radius, float time) {
     const int NUM_PARTICLES = 32;
     
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        // Smaller, shorter-lived particles
+        // Microscopic, very short-lived particles
         float seed = float(i) * 1.618;
         vec2 dir = normalize(vec2(random(vec2(seed, 1.0)), random(vec2(seed, 2.0))) * 2.0 - 1.0);
-        float speed = 0.2 + random(vec2(seed, 3.0)) * 0.5; // Slower particles
-        float lifetime = 0.2 + random(vec2(seed, 4.0)) * 0.3; // Shorter lifetime
-        float size = 0.01 + random(vec2(seed, 5.0)) * 0.03; // Smaller particles
+        float speed = 0.1 + random(vec2(seed, 3.0)) * 0.2; // Very slow particles
+        float lifetime = 0.1 + random(vec2(seed, 4.0)) * 0.15; // Very short lifetime
+        float size = 0.003 + random(vec2(seed, 5.0)) * 0.007; // Tiny particles
         
         // Particle physics
         vec2 pos = center + dir * radius * (time * speed);
@@ -183,15 +183,15 @@ float explosionParticles(vec2 p, vec2 center, float radius, float time) {
 float explosionRings(vec2 p, vec2 center, float radius) {
     float time = mod(iTime, 1.0); // Loop every second
     
-    // Core explosion - much tighter
+    // Core explosion - extremely tight
     float dist = distance(p, center) / radius;
-    float core = smoothstep(0.5, 0.0, dist) * 1.5; // Smaller, less intense core
+    float core = smoothstep(0.3, 0.0, dist) * 1.0; // Tiny, subtle core
     
-    // Tiny shockwave that doesn't spread far
-    float shockwave = smoothstep(0.2, 0.0, abs(dist - 0.3 + time * 0.2)) * 0.5;
+    // Minimal shockwave
+    float shockwave = smoothstep(0.1, 0.0, abs(dist - 0.15 + time * 0.1)) * 0.3;
     
-    // Fewer particles that stay close
-    float particles = explosionParticles(p, center, radius, time) * 0.5;
+    // Very few subtle particles
+    float particles = explosionParticles(p, center, radius, time) * 0.2;
     
     // Combine effects
     float explosion = max(core, max(shockwave, particles));
@@ -251,8 +251,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Much smaller main explosion tightly around cursor
-            float randSize = 5.0 + 10.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
+            // Extremely small explosion (20x smaller)
+            float randSize = 0.5 + 1.0 * pow(random(vec2(iTime, centerCP.x)), 2.0);
             vec2 cursorRightBottom = centerCP + vec2(
                 currentCursorData.z * 0.5, 
                 currentCursorData.w * 0.5  // Positive Y for bottom on macOS
@@ -260,16 +260,16 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 explosionPos = cursorRightBottom;
             float explosion = explosionRings(vu, explosionPos, randSize);
             
-            // Create 3-5 much smaller booms very close to cursor
-            int numBooms = 3 + int(random(vec2(iTime, centerCP.y)) * 3.0);
+            // Create 2-3 tiny booms extremely close to cursor
+            int numBooms = 2 + int(random(vec2(iTime, centerCP.y)) * 2.0);
             for (int i = 0; i < numBooms; i++) {
-                // Random direction and very small distance from cursor
+                // Random direction and extremely small distance from cursor
                 float angle = random(vec2(float(i), centerCP.x)) * 2.0 * PI;
-                float distance = 0.1 + 0.2 * random(vec2(float(i), centerCP.y));
+                float distance = 0.05 + 0.1 * random(vec2(float(i), centerCP.y));
                 vec2 boomPos = explosionPos + vec2(cos(angle), sin(angle)) * randSize * distance;
                 
-                // Tiny boom sizes (3-10 pixels)
-                float boomSize = 3.0 + 7.0 * random(vec2(float(i), iTime));
+                // Microscopic boom sizes (0.5-2 pixels)
+                float boomSize = 0.5 + 1.5 * random(vec2(float(i), iTime));
                 
                 // Random color variation between yellow and red
                 float colorMix = random(vec2(float(i), centerCP.x));
