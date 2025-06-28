@@ -23,14 +23,14 @@
 #define RAY_GREEN 1.0
 #define RAY_BLUE 0.3
 
-// More red-dominated explosion colors
-const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.4, 0.1, 1.0);   // Red-orange core
-const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.3, 0.0, 1.0);   // Deep red
-const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.1, 0.0, 1.0);    // Intense red
-const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.2, 0.0, 0.9);    // Bright red
-const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.3, 0.0, 0.9);    // Red
-const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.4, 0.1, 0.8);    // Red-orange 
-const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.5, 0.2, 0.7);    // Orange-red
+// Brighter, more vibrant explosion colors
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.8, 0.3, 1.0);   // Bright yellow core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.5, 0.1, 1.0);   // Orange-yellow
+const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);    // Intense red
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.3, 0.0, 1.0);    // Bright red
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.4, 0.1, 1.0);    // Red-orange
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.6, 0.2, 0.9);    // Orange
+const vec4 EXPLOSION_COOL_COLOR = vec4(1.0, 0.9, 0.4, 0.8);    // Bright yellow
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -307,7 +307,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             explosionColor = mix(explosionColor, SMOKE_COLOR, 
                                smoothstep(0.3, 0.6, explosion)*0.9);
             
-            float explosionAlpha = explosion * (1.0 - progress) * 1.5;
+            // Longer duration (0.2s instead of 0.1s) and brighter colors
+            float explosionAlpha = explosion * (1.0 - (progress * 0.5)) * 2.0;
             baseColor = mix(baseColor, explosionColor, explosionAlpha);
         }
     }
