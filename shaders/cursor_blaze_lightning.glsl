@@ -70,12 +70,6 @@ const vec4 CURRENT_CURSOR_COLOR = TRAIL_COLOR;
 const vec4 PREVIOUS_CURSOR_COLOR = TRAIL_COLOR;
 const float DURATION = 0.1;
 
-// Lightning effect constants
-const bool USE_LIGHTNING = false; // Toggle lightning effect
-const vec4 LIGHTNING_COLOR = vec4(0.0, 0.5, 1.0, 1.0); // Bright blue
-const float LIGHTNING_WIDTH = 0.02; // Thickness of the lightning
-const float LIGHTNING_SPEED = 2.0; // Speed of the strike
-const float SPARSE_LEVEL = 0.3; // 0.0 = dense, 1.0 = very sparse, >1.0 = extremely sparse
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
@@ -146,64 +140,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
             newColor = mix(newColor, TRAIL_COLOR, antialising(sdfTrail) * gradient);
         }
         
-        // Apply lightning effect when cursor moves left-to-right
-        if (USE_LIGHTNING && currentCursor.x > previousCursor.x) {
-            // Lightning parameters - more sparse
-            float topWidth = 0.015;
-            float bottomWidth = 0.0015;
-            float speed = 40.0;
-            float jaggedness = 0.08;
-            
-            // Use rightmost point of cursor trail
-            vec2 trailRight = vec2(
-                max(currentCursor.x, previousCursor.x),
-                mix(currentCursor.y, previousCursor.y, 0.5)
-            );
-            
-            // Start from wider point at top (-1.0 in Metal coordinates)
-            vec2 startPoint = vec2(trailRight.x, -1.0);
-            vec2 endPoint = vec2(trailRight.x, trailRight.y);
-            
-            // Calculate current width (narrows from top to bottom)
-            float t = (vu.y - startPoint.y)/(endPoint.y - startPoint.y);
-            t = clamp(t, 0.0, 1.0);
-            float currentWidth = mix(topWidth, bottomWidth, t);
-            
-            // Create more sparse and random main path
-            float rand1 = fract(sin(dot(vec2(t, 0.1), vec2(12.9898, 78.233))) * 43758.5453);
-            float rand2 = fract(sin(dot(vec2(t, 0.3), vec2(12.9898, 78.233))) * 43758.5453);
-            
-            vec2 mainPath = mix(startPoint, endPoint, t);
-            mainPath.x += jaggedness * (rand1 - 0.5) * (1.0 - t) * (0.5 + 0.5 * rand2);
-            
-            // Create fewer but more pronounced branches
-            float branchTime = iTime * speed;
-            float branchFactor = (1.0 - t) * (0.3 + 0.7 * (0.5 + 0.5 * sin(branchTime + t * 30.0)));
-            
-            // Extremely sparse branches - only show occasionally
-            if (rand2 > (0.9 + SPARSE_LEVEL * 0.5)) {
-                vec2 branchOffset = vec2(
-                    (rand1 - 0.5) * 0.15 * branchFactor,
-                    (rand2 - 0.5) * 0.05 * branchFactor
-                );
-                
-                // Calculate distances with strict horizontal constraint
-                float distToBranch = length(vu - (mainPath + branchOffset)) - (currentWidth * 0.4);
-                float branchAlpha = exp(-120.0 * distToBranch) * 0.6;
-                newColor = mix(newColor, LIGHTNING_COLOR, branchAlpha);
-            }
-            
-            // Only apply lightning near the right edge of trail
-            float horizontalRange = 0.1;
-            float horizontalDist = abs(vu.x - trailRight.x);
-            float inRange = 1.0 - smoothstep(0.0, horizontalRange, horizontalDist);
-            
-            // Extremely sparse main lightning with big gaps
-            float distToMain = length(vu - mainPath) - currentWidth;
-            float lightning = exp(-80.0 * distToMain) * inRange * step(0.95, rand1) * (1.0 - smoothstep(1.0, 2.0, SPARSE_LEVEL));
-            
-            newColor = mix(newColor, LIGHTNING_COLOR, lightning * 0.8);
-        }
     }
     
     // Apply cursor color regardless of progress
