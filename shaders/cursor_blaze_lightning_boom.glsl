@@ -32,7 +32,6 @@ const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.3, 0.0, 1.0);     // Red-orange
 const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);     // Bright red
 const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.1, 0.0, 1.0);     // Deep red
 const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.05, 0.0, 1.0);    // Dark red
-const vec4 DEBRIS_COLOR = vec4(1.0, 0.95, 0.8, 1.0);           // White-hot debris
 
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
@@ -181,31 +180,6 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     // Combine lobes with ray effect
     d += max(lobe1, max(lobe2*0.8, lobe3*0.6)) + rays*0.5;
     
-    // Debris with more randomness
-    for(int i = 0; i < 30; i++) {  // Increased debris count
-        // Create clustered ejection patterns
-        float cluster = floor(float(i)/5.0);
-        float rnd1 = random(vec2(float(i), iTime*0.3 + cluster));
-        float rnd2 = random(vec2(float(i)*1.3, iTime*0.4 + cluster));
-        
-        // Bias directions based on cluster
-        vec2 baseDir = vec2(sin(cluster*2.0), cos(cluster*1.5));
-        vec2 dir = normalize(mix(
-            vec2(rnd1-0.5, rnd2-0.5), 
-            baseDir, 
-            0.7
-        ));
-        
-        // Particle movement with acceleration
-        float speed = 0.5 + rnd1*0.5;
-        float t = mod(iTime*(0.5 + rnd2), 1.0);
-        vec2 debrisPos = center + dir * radius * (t * speed + t*t * 0.5);
-        
-        // Fixed pixel-based particle sizes (2-15 pixels)
-        float size = mix(2.0, 15.0, rnd1); 
-        d += smoothstep(size, 0.0, distance(p, debrisPos)) * 0.4;
-    }
-    
     return clamp(d * shockwave, 0.0, 1.0);
 }
 
@@ -299,10 +273,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             if (colorRand > 0.7) {
                 explosionColor.r += 0.3 * ringMask;
             }
-            
-            // Super-bright glowing debris
-            vec4 debrisColor = DEBRIS_COLOR * (1.2 + 0.8*sin(iTime*12.0));
-            explosionColor = mix(explosionColor, debrisColor, debrisMask*2.0);
             
             // Longer duration (0.2s instead of 0.1s) and brighter colors
             float explosionAlpha = explosion * (1.0 - (progress * 0.5)) * 2.0;
