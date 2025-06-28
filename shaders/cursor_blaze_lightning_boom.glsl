@@ -209,6 +209,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 explosionPos = centerCP;
             float explosion = explosionEffect(vu, explosionPos, randSize);
             
+            // Calculate explosion UVs
+            vec2 explosionUV = (vu - explosionPos) / randSize;
+            
             // High-contrast fire color with sparks
             vec3 fireColor = mix(
                 vec3(1.0, 1.0, 0.3), // bright yellow
@@ -218,7 +221,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             
             // Add white hot sparks
             float sparks = smoothstep(0.8, 1.0, explosion) * 
-                         (0.9 + 0.1 * sin(iTime * 100.0 + uv.x * 100.0));
+                         (0.9 + 0.1 * sin(iTime * 100.0 + explosionUV.x * 100.0));
             fireColor = mix(fireColor, vec3(1.0), sparks * 0.8);
             
             float explosionAlpha = explosion * (1.0 - progress) * 2.0;
