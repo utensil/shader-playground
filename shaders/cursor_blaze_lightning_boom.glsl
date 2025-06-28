@@ -4,14 +4,22 @@
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
-// Enhanced explosion color layers
-const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.98, 0.7, 1.0);  // White-hot core
-const vec4 EXPLOSION_CORE2_COLOR = vec4(1.0, 0.9, 0.5, 1.0);   // Bright yellow
-const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.3, 0.0, 1.0);    // Intense red-orange
-const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.5, 0.1, 0.9);    // Orange-yellow
-const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.7, 0.2, 0.8);    // Golden yellow
-const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.8, 0.3, 0.7);    // Lemon yellow
-const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.85, 0.4, 0.6);   // Cool yellow
+// Inspired by https://www.shadertoy.com/view/4d2XR1
+#define RAY_BRIGHTNESS 12.0
+#define RAY_DENSITY 5.0
+#define RAY_CURVATURE 18.0
+#define RAY_RED 4.0
+#define RAY_GREEN 1.0
+#define RAY_BLUE 0.3
+
+// Enhanced explosion color layers with ray-inspired colors
+const vec4 EXPLOSION_CORE1_COLOR = vec4(1.0, 0.95, 0.6, 1.0);  // White-hot core
+const vec4 EXPLOSION_CORE2_COLOR = vec4(RAY_RED*0.8, RAY_GREEN*0.8, RAY_BLUE*0.8, 1.0); // Ray-inspired
+const vec4 EXPLOSION_HOT1_COLOR = vec4(1.0, 0.2, 0.0, 1.0);    // Intense red
+const vec4 EXPLOSION_HOT2_COLOR = vec4(1.0, 0.4, 0.1, 0.9);    // Orange-red
+const vec4 EXPLOSION_MID1_COLOR = vec4(1.0, 0.6, 0.2, 0.8);    // Orange
+const vec4 EXPLOSION_MID2_COLOR = vec4(1.0, 0.8, 0.3, 0.7);    // Yellow-orange
+const vec4 EXPLOSION_COOL_COLOR = vec4(0.9, 0.9, 0.5, 0.6);    // Yellow
 const vec4 DEBRIS_COLOR = vec4(1.0, 0.85, 0.5, 1.0);           // Glowing debris
 const vec4 SMOKE_COLOR = vec4(0.15, 0.15, 0.15, 0.8);         // Dark contrast smoke
 
@@ -47,13 +55,41 @@ float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
     return clamp(d, 0.0, 1.0);
 }
 
+// Noise function inspired by reference shader
+float rayNoise(vec2 x) {
+    return texture(iChannel0, x*.01).x;
+}
+
+// Flaring generator - inspired by reference shader
+mat2 m2 = mat2(0.80, 0.60, -0.60, 0.80);
+float rayFbm(vec2 p) {    
+    float z = 2.0;
+    float rz = -0.05;
+    p *= 0.25;
+    for (int i = 1; i < 6; i++) {
+        rz += abs((rayNoise(p)-0.5)*2.)/z;
+        z = z*1.8;
+        p = p*2.0*m2;
+    }
+    return rz;
+}
+
 float explosionRings(vec2 p, vec2 center, float radius) {
     float d = 0.0;
     
-    // Create organic shape with multiple noise layers
-    vec2 dir = normalize(p - center);
-    float dist = length(p - center);
-    float angle = atan(dir.y, dir.x);
+    // Create organic shape with ray-inspired patterns
+    vec2 uv = p - center;
+    uv *= RAY_CURVATURE / radius;
+    
+    float dist = length(uv);
+    float angle = atan(uv.y, uv.x);
+    
+    // Add ray-inspired flaring
+    float t = iTime * 0.33;
+    float x = dot(normalize(uv), vec2(0.5,0.0)) + t;
+    float y = dot(normalize(uv), vec2(0.0,0.5)) + t;
+    float rays = rayFbm(vec2(y * RAY_DENSITY, x * RAY_DENSITY));
+    rays = smoothstep(0.02-0.1, RAY_BRIGHTNESS+0.001, rays);
     
     // Base shape with noise distortion
     float shapeNoise = 0.5 + 0.5*sin(angle*10.0 + iTime*5.0) * 
@@ -83,8 +119,8 @@ float explosionRings(vec2 p, vec2 center, float radius) {
                            dist*(0.9 + 0.1*sin(iTime*7.0 + angle*7.0))) * 
                   (0.6 + 0.4*sin(angle*2.0 + iTime*3.0));
     
-    // Combine lobes with directional weighting
-    d += max(lobe1, max(lobe2*0.8, lobe3*0.6));
+    // Combine lobes with ray effect
+    d += max(lobe1, max(lobe2*0.8, lobe3*0.6)) + rays*0.5;
     
     // Debris with directional clusters
     for(int i = 0; i < 20; i++) {
