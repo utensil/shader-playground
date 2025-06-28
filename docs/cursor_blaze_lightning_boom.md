@@ -25,12 +25,47 @@ When the cursor moves left, an explosive effect is triggered:
 
 ## Technical Implementation
 
-The effect uses:
-- Signed distance functions for shape rendering
-- Direction detection (left/right movement) 
-- Color gradients and blending modes
-- Particle-like effects for debris/smoke
-- Time-based animation curves
+### Core Techniques
+- **Signed Distance Functions**: Used for precise shape rendering of both lightning and explosion elements
+- **Direction Detection**: Determines movement direction (left/right) to trigger appropriate effects
+- **Particle Systems**: 
+  - 20 debris particles with randomized trajectories and sizes
+  - 10 smoke wisps with organic movement patterns
+- **Layered Rendering**: Multiple passes create depth and realism
+- **Procedural Animation**: Time-based curves control effect evolution
+
+### Performance Optimizations
+- **Branchless Design**: Minimizes conditional logic in shader
+- **Pre-calculated Values**: Reuses computed values where possible  
+- **Efficient Randomness**: Uses optimized hash functions for particle effects
+- **Distance-based Culling**: Automatically fades effects based on distance
+
+### Effect Parameters
+```glsl
+// Lightning Parameters
+const float LIGHTNING_BRANCH_COUNT = 5.0;
+const float LIGHTNING_WIDTH = 0.01;
+
+// Explosion Parameters  
+const float EXPLOSION_DURATION = 0.1; // seconds
+const int DEBRIS_COUNT = 20;
+const int SMOKE_COUNT = 10;
+const float SHOCKWAVE_TURBULENCE = 0.1;
+```
+
+### Animation Timeline
+1. **Initial Frame (0ms)**: 
+   - Core flash reaches peak intensity
+   - Shockwave begins propagating
+2. **Early Phase (0-30ms)**:
+   - Primary rings emerge
+   - Debris particles accelerate outward  
+3. **Mid Phase (30-70ms)**:
+   - Secondary effects become visible
+   - Smoke begins to form
+4. **Late Phase (70-100ms)**:
+   - Effects begin dissipating 
+   - Smooth fade-out transition
 
 ## Uniform Variable Guidelines
 
