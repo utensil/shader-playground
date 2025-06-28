@@ -272,9 +272,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         }
         // Explosion effect when moving left
         else {
-            // Larger and more red explosion
-            float randSize = 100.0 + 100.0 * random(vec2(iTime, centerCP.x)); // Doubled size
-            vec2 explosionPos = centerCP;
+            // Bigger explosion with more variance at right-bottom of cursor
+            float randSize = 150.0 + 200.0 * random(vec2(iTime, centerCP.x)); // Larger base size and variance
+            vec2 cursorRightBottom = centerCP + vec2(currentCursorData.z * 0.5, -currentCursorData.w * 0.5);
+            vec2 explosionPos = cursorRightBottom;
             float explosion = explosionRings(vu, explosionPos, randSize);
             
             // Apply reference shader's color inversion
