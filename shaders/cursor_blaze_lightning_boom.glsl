@@ -1,10 +1,12 @@
 // Standalone implementation of lightning and explosion cursor effects
+#define uniform extern
 uniform vec3 iResolution;
 uniform float iTime;
 uniform vec4 iCurrentCursor;
 uniform vec4 iPreviousCursor;
 uniform float iTimeCursorChange;
 uniform sampler2D iChannel0;
+#undef uniform
 
 const vec4 LIGHTNING_CORE_COLOR = vec4(0.8, 0.9, 1.0, 1.0);
 const vec4 LIGHTNING_EDGE_COLOR = vec4(0.4, 0.6, 1.0, 0.7);
