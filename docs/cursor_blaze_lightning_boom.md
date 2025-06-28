@@ -12,16 +12,40 @@ When the cursor moves to the right, a dynamic lightning effect is rendered:
 
 ## Explosion Effect (Left Movement)
 
-When the cursor moves left, an explosive effect is triggered:
+When the cursor moves left, a highly realistic explosion effect is triggered:
 
-- **Initial Flash**: Sudden intense white/yellow-white flash at epicenter
-- **Color Rings**: Concentric expanding rings with:
-  - Deep red innermost ring
-  - Orange-yellow middle band  
-  - Light yellow-green outer ring
-- **Debris**: Irregular shimmering fragments hurled outward
-- **Smoke**: Dark billowing smoke rises from center
-- **Chaos Effect**: Layered elements create visual chaos
+### Core Visual Elements
+- **Initial Flash**: 
+  - Intense white-yellow core (1700-2000K color temperature)
+  - Organic flickering at 30-40Hz for realistic combustion effect
+  - Radial brightness falloff with turbulence
+
+- **Shockwave**: 
+  - Propagating spherical front with Mach wave distortion
+  - Temperature gradient from white-hot (2000K) to red (1000K)
+  - Subtle turbulence patterns simulating air disruption
+
+- **Debris Field**:
+  - 20+ high-velocity particles with randomized:
+    - Trajectories (0-360° ejection angles)
+    - Sizes (2-8% of blast radius)  
+    - Velocities (0.5-1.0 radius units/frame)
+    - Rotation speeds
+  - Secondary fragmentation effects
+
+- **Smoke Plume**:
+  - Volumetric dark smoke with density variations
+  - Convection-driven upward movement
+  - Temperature-based color gradient (black to gray)
+  - Organic dissipation patterns
+
+### Color Spectrum
+| Temperature | Color | RGB Value | Usage |
+|-------------|-------|-----------|-------|
+| 2000K+ | White-Yellow | (1.0, 0.98, 0.7) | Core flash |
+| 1500K | Orange-Red | (1.0, 0.3, 0.1) | Primary shock front |
+| 1000K | Deep Red | (1.0, 0.6, 0.2) | Secondary wave |
+| 800K | Glowing Embers | (0.9, 0.8, 0.4) | Cooling phase |
 
 ## Technical Implementation
 
@@ -43,14 +67,24 @@ When the cursor moves left, an explosive effect is triggered:
 ### Effect Parameters
 ```glsl
 // Lightning Parameters
-const float LIGHTNING_BRANCH_COUNT = 5.0;
-const float LIGHTNING_WIDTH = 0.01;
+const float LIGHTNING_BRANCH_COUNT = 5.0;    // Number of secondary arcs
+const float LIGHTNING_WIDTH = 0.01;         // Main channel thickness
 
-// Explosion Parameters  
-const float EXPLOSION_DURATION = 0.1; // seconds
-const int DEBRIS_COUNT = 20;
-const int SMOKE_COUNT = 10;
-const float SHOCKWAVE_TURBULENCE = 0.1;
+// Explosion Thermodynamics  
+const float EXPLOSION_DURATION = 0.1;       // Total effect lifespan (seconds)
+const float CORE_TEMPERATURE = 2.0;         // Initial flash intensity
+const float SHOCKWAVE_SPEED = 1.5;          // Expansion rate multiplier
+
+// Particle Systems
+const int DEBRIS_COUNT = 20;                // High-velocity fragments
+const float DEBRIS_SIZE_MIN = 0.02;         // As fraction of blast radius  
+const float DEBRIS_SIZE_MAX = 0.08;
+const int SMOKE_COUNT = 10;                 // Convective plumes
+const float SMOKE_DENSITY = 0.7;            // Opacity control
+
+// Physical Simulation
+const float SHOCKWAVE_TURBULENCE = 0.2;     // Air disturbance magnitude
+const float THERMAL_DECAY_RATE = 0.8;       // Cooling speed
 ```
 
 ### Animation Timeline
