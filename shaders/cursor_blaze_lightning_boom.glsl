@@ -36,9 +36,9 @@ float lightningBranches(vec2 p, vec2 start, vec2 end, float width) {
     // Add branches
     float branchCount = 5.0;
     for(float i = 0.0; i < branchCount; i++) {
-        float t = random(vec2(i, time)) * 0.5 + 0.3;
+        float t = random(vec2(i, iTime)) * 0.5 + 0.3;
         vec2 branchStart = mix(start, end, t);
-        vec2 branchEnd = branchStart + perp * (random(vec2(i+1.0, time)) * 0.2 - 0.1) * length(end - start);
+        vec2 branchEnd = branchStart + perp * (random(vec2(i+1.0, iTime)) * 0.2 - 0.1) * length(end - start);
         d += smoothstep(width*0.5, 0.0, distanceToLine(p, branchStart, branchEnd)) * 0.5;
     }
     
@@ -60,7 +60,7 @@ float explosionRings(vec2 p, vec2 center, float radius) {
     // Debris effect
     for(int i = 0; i < 10; i++) {
         vec2 dir = vec2(sin(float(i)*123.456), cos(float(i)*321.654));
-        vec2 debrisPos = center + dir * radius * (0.5 + 0.5*sin(time*5.0 + float(i)));
+        vec2 debrisPos = center + dir * radius * (0.5 + 0.5*sin(iTime*5.0 + float(i)));
         d += smoothstep(radius*0.05, 0.0, distance(p, debrisPos)) * 0.3;
     }
     
