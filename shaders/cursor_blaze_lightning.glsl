@@ -131,9 +131,16 @@ const vec3 EDGE_COLOR = vec3(0.8, 0.3, 1.0);  // More vibrant purple
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
+    // Ensure required uniforms are available
+    if (!defined(iCurrentCursor) || !defined(iPreviousCursor) || !defined(iTimeCursorChange)) {
+        fragColor = vec4(1.0, 0.0, 1.0, 1.0); // Magenta error color
+        return;
+    }
     #if !defined(WEB)
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy);
     #endif
+    
+    // Initialize color first
     
     // Debug lightning activation
     vec2 prev_pos = iCurrentCursor.xy;
@@ -142,9 +149,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     float delta_y = abs(curr_pos.y - prev_pos.y);
     bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
     
-    // Visual debug - show green dot when conditions met
-    if (distance(fragCoord, vec2(20,20)) < 10.0) {
-        newColor.rgb = should_lightning ? vec3(0,1,0) : vec3(1,0,0);
+    // Simple activation debug in corner
+    if (fragCoord.x < 30.0 && fragCoord.y < 30.0) {
+        newColor.rgb = should_lightning ? vec3(0,1,0) : vec3(0.5,0.5,0.5);
     }
     vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
