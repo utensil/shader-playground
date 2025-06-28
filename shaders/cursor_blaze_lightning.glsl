@@ -102,6 +102,14 @@ vec2 getRectangleCenter(vec4 rectangle) {
     return vec2(rectangle.x + (rectangle.z / 2.), rectangle.y - (rectangle.w / 2.));
 }
 
+// Simple lightning branch function
+float drawLightningBranch(vec2 p, vec2 a, vec2 b, float width) {
+    vec2 dir = normalize(b - a);
+    vec2 normal = vec2(-dir.y, dir.x);
+    float d = dot(p - a, normal);
+    return smoothstep(width, 0.0, abs(d));
+}
+
 const vec4 TRAIL_COLOR = vec4(1.0, 0.725, 0.161, 1.0);
 const vec4 TRAIL_COLOR_ACCENT = vec4(1.0, 0., 0., 1.0);
 const vec4 CURRENT_CURSOR_COLOR = TRAIL_COLOR;
@@ -116,13 +124,41 @@ const float LIGHTNING_SPEED = 2.0;
 const float SPARSE_LEVEL = 0.3;
 */
 
+// Lightning effect parameters
+const float LIGHTNING_WIDTH = 0.02;
+const vec3 CORE_COLOR = vec3(1.0, 0.8, 0.2);
+const vec3 EDGE_COLOR = vec3(0.7, 0.2, 1.0);
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     #if !defined(WEB)
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy);
     #endif
+    
+    // Check lightning activation conditions
+    vec2 prev_pos = iCurrentCursor.xy;
+    vec2 curr_pos = iCurrentCursor.zw;
+    float delta_x = curr_pos.x - prev_pos.x;
+    float delta_y = abs(curr_pos.y - prev_pos.y);
+    bool should_lightning = delta_x > 0.0 && delta_y < 2.0;
     vec2 vu = normalize(fragCoord, 1.);
     vec2 offsetFactor = vec2(-.5, 0.5);
+    
+    // Calculate origin zone if lightning should activate
+    if (should_lightning) {
+        float screen_width = iResolution.x;
+        float travel_dist = delta_x;
+        float zone_width = min(travel_dist * 0.3, screen_width * 0.4);
+        float zone_top = iResolution.y * 0.1;
+        
+        // Generate random origin points within zone
+        float rand1 = fract(sin(dot(vec2(iTime, 0.5), vec2(12.9898,78.233))) * 43758.5453);
+        float rand2 = fract(sin(dot(vec2(iTime, 1.0), vec2(12.9898,78.233))) * 43758.5453);
+        vec2 origin = vec2(
+            prev_pos.x + rand1 * zone_width,
+            zone_top + rand2 * (iResolution.y * 0.05)
+        );
+    }
 
     vec4 currentCursor = vec4(normalize(iCurrentCursor.xy, 1.), normalize(iCurrentCursor.zw, 0.));
     vec4 previousCursor = vec4(normalize(iPreviousCursor.xy, 1.), normalize(iPreviousCursor.zw, 0.));
@@ -169,5 +205,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     
     newColor = mix(newColor, TRAIL_COLOR_ACCENT, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
     newColor = mix(newColor, CURRENT_CURSOR_COLOR, 1.0 - smoothstep(sdfCursor, -0.000, 0.003 * (1. - progress)));
+    // Draw lightning if active
+    if (should_lightning) {
+        vec2 target = mix(curr_pos, prev_pos, 0.3); // 70% toward cursor
+        float branch = drawLightningBranch(fragCoord, origin, target, LIGHTNING_WIDTH);
+        float fade = smoothstep(0.0, 0.2, distance(fragCoord, 0.5*(origin+target)));
+        vec3 lightning_color = mix(CORE_COLOR, EDGE_COLOR, fade);
+        newColor.rgb = mix(newColor.rgb, lightning_color, branch);
+    }
+    
     fragColor = mix(newColor, fragColor, step(sdfCursor, 0.));
 }
